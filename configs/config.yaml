@@ -1,0 +1,37 @@
+experiment:
+  data_path: "../data"
+  checkpoint_dir: "../checkpoints"
+  models: ["lstm", "cnnlstm", "tcn", "fed", "transformer"]
+  row_fraction: 1.0  # 1.0 = Use 100% of data
+  num_targets: 424   # Full target set
+  filter_features: false
+  optuna:
+    direction: "minimize"
+    n_trials: 100    # Increased for thorough search
+    n_jobs: 2        # Parallel jobs (adjust based on hardware)
+model:
+  model_name: "default"
+  model_class: "default"
+  params:
+    input_size: 1672
+    output_size: 424
+    input_len: 64
+    output_len: 1
+    batch_size: 16
+    hidden_size: 128
+    num_layers: 2
+    dropout: 0.1
+    epochs: 10
+    patience: 5
+    channels: 64
+    blocks: 3
+    kernel_size: 5
+    num_conv_layers: 2
+    tcn_kernel: 3
+    decom_kernel_size: 25
+    top_k_modes: 5
+    nhead: 8
+    dim_feedforward: 512
+  lr: 0.001
+  optimizer: "Adam"
+  lr_policy: "constant"

@@ -1,0 +1,17 @@
+model_type: LSTM
+model_class: LSTMForecaster
+trainer_class: LSTMTrainer
+params:
+  input_len: 64    # timestemps of features 
+  input_size: 1672 # Number of features 
+  output_size: 1   # timestemps of targets
+  num_targets: 20  # Multitargets 
+  hidden_size: 50  # Will be overridden by Optuna
+  num_layers: 2    # Will be overridden by Optuna
+  batch_size: 32   # Will be overridden by Optuna
+  dropout: 0.2
+optimizer: Adam
+lr: 0.001  # Will be overridden by Optuna
+lr_policy: constant
+epochs: 50
+patience: 3

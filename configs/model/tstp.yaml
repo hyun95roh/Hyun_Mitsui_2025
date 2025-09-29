@@ -1,0 +1,16 @@
+model_type: TSTP  #TimeSeriesTransformer for Prediction 
+model_class: TransformerTrainer
+params:
+  input_len: 64
+  output_len: 1
+  batch_size: 16
+  hidden_size: 128
+  num_layers: 2
+  dropout: 0.1
+  nhead: 8
+  dim_feedforward: 512
+  epochs: 5
+  patience: 3
+optimizer: Adam
+lr: 0.001
+lr_policy: constant

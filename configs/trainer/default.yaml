@@ -1,0 +1,3 @@
+scheduler: null  # Add scheduler config if needed
+early_stopping_patience: 20
+

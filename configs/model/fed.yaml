@@ -1,0 +1,21 @@
+model_type: FED
+model_class: FEDForecaster
+trainer_class: FEDTrainer
+params:
+  input_len: 64 # Adjust based on your data
+  input_size: 1672 
+  output_len: 1  
+  num_targets: 20 
+  hidden_size: 128  # d_model
+  num_layers: 2
+  batch_size: 32
+  dropout: 0.1
+  decom_kernel_size: 25  # Moving average window for decomposition
+  top_k_modes: 5  # Number of frequency modes
+  nhead: 8  # Attention heads
+  dim_feedforward: 512  # Feed-forward dimension
+optimizer: Adam
+lr: 0.001
+epochs: 50
+lr_policy: constant
+patience: 5

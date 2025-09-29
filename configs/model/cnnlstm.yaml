@@ -1,0 +1,20 @@
+model_type: CNNLSTM 
+model_class: CNNLSTMForecaster
+trainer_class: CNNLSTMTrainer
+params:
+  input_len: 64
+  input_size: 1672
+  output_len: 1
+  num_targets: 20
+  hidden_size: 128
+  num_layers: 2
+  batch_size: 16
+  dropout: 0.1
+  channels: 128
+  kernel_size: 5
+  num_conv_layers: 2
+optimizer: Adam
+lr: 0.001
+epochs: 50
+lr_policy: constant
+patience: 5

@@ -1,0 +1,25 @@
+Models to test: ['lstm', 'cnnlstm', 'tcn', 'fed']
+LSTM
+Epoch 1/5 | train 0.005071 | val 0.002501 | lr 1.00e-03
+Epoch 2/5 | train 0.001880 | val 0.001512 | lr 1.00e-03
+Epoch 3/5 | train 0.000989 | val 0.000898 | lr 1.00e-03
+Epoch 4/5 | train 0.000749 | val 0.000705 | lr 1.00e-03
+Epoch 5/5 | train 0.000589 | val 0.000638 | lr 1.00e-03
+CNNLSTM
+Epoch 1/5 | train 0.001824 | val 0.000645 | lr 1.00e-03
+Epoch 2/5 | train 0.000745 | val 0.000433 | lr 1.00e-03
+Epoch 3/5 | train 0.000518 | val 0.000358 | lr 1.00e-03
+Epoch 4/5 | train 0.000397 | val 0.000281 | lr 1.00e-03
+Epoch 5/5 | train 0.000366 | val 0.000305 | lr 1.00e-03
+TCN
+Epoch 1/5 | train 0.877328 | val 2.374306 | lr 1.00e-03
+Epoch 2/5 | train 2.519399 | val 1.279585 | lr 1.00e-03
+Epoch 3/5 | train 0.577814 | val 0.226195 | lr 1.00e-03
+Epoch 4/5 | train 0.242168 | val 0.761430 | lr 1.00e-03
+Epoch 5/5 | train 0.273811 | val 0.136880 | lr 1.00e-03
+FED
+Epoch 1/5 | train 0.014311 | val 0.042975 | lr 1.00e-03
+Epoch 2/5 | train 0.009467 | val 0.032831 | lr 1.00e-03
+Epoch 3/5 | train 0.006350 | val 0.034481 | lr 1.00e-03
+Epoch 4/5 | train 0.005927 | val 0.025081 | lr 1.00e-03
+Epoch 5/5 | train 0.005424 | val 0.015792 | lr 1.00e-03
