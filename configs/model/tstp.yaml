@@ -1,8 +1,11 @@
 model_type: TSTP  #TimeSeriesTransformer for Prediction 
-model_class: TransformerTrainer
+model_class: TimeSeriesTransformerForPrediction # Import from HuggingFace
+trainer_class: TSTPTrainer
 params:
   input_len: 64
-  output_len: 1
+  input_size: 1672
+  output_len: 5     # lag=[1,2,3,4] so the maximum prediction lag = 4 + 1 = 5 
+  output_size: 424
   batch_size: 16
   hidden_size: 128
   num_layers: 2
@@ -11,6 +14,11 @@ params:
   dim_feedforward: 512
   epochs: 5
   patience: 3
+  weight_decay: 1e-3
+  scheduler_patience: 5
+  scheduler_factor: 0.5
+  clip_grad_norm: 1.0
+  partially_finite_target: false
 optimizer: Adam
 lr: 0.001
 lr_policy: constant

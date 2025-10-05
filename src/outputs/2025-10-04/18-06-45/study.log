@@ -1,0 +1,144 @@
+[2025-10-04 18:06:45,862][root][INFO] - Configuration: experiment:
+  data_path: ../data
+  checkpoint_dir: ../checkpoints
+  models:
+  - fed
+  row_fraction: 1.0
+  num_targets: 424
+  filter_features: false
+  optuna:
+    direction: minimize
+    n_trials: 2
+    n_jobs: 2
+model:
+  model_type: default
+  model_class: default
+  trainer_class: default
+  params:
+    input_size: 1672
+    output_size: 424
+    input_len: 64
+    output_len: 5
+    batch_size: 16
+    hidden_size: 128
+    num_layers: 2
+    dropout: 0.1
+    epochs: 10
+    patience: 5
+    channels: 64
+    blocks: 3
+    kernel_size: 5
+    num_conv_layers: 2
+    tcn_kernel: 3
+    decom_kernel_size: 25
+    top_k_modes: 5
+    nhead: 8
+    dim_feedforward: 512
+    weight_decay: 0.001
+    scheduler_patience: 5
+    scheduler_factor: 0.5
+    clip_grad_norm: 1.0
+    partially_finite_target: false
+  lr: 0.001
+  optimizer: Adam
+  lr_policy: constant
+
+[2025-10-04 18:06:45,866][root][INFO] - Set random seed to 42 for reproducibility.
+[2025-10-04 18:06:45,867][root][INFO] - Loading train.csv from ../data/train.csv
+[2025-10-04 18:06:45,959][root][INFO] - Loading train_labels.csv from ../data/train_labels.csv
+[2025-10-04 18:06:46,071][root][INFO] - Loading target_pairs.csv from ../data/target_pairs.csv
+[2025-10-04 18:06:46,249][root][INFO] - X_full NaNs after imputation: 0
+[2025-10-04 18:06:46,250][root][INFO] - Y_full NaNs before imputation: 0
+[2025-10-04 18:06:46,251][root][INFO] - Y_full NaNs after imputation: 0
+[2025-10-04 18:06:46,252][root][INFO] - X_full feature count: 1671
+[2025-10-04 18:06:46,260][root][INFO] - Data loaded: X_full_np shape=(1917, 1671), Y_full_np shape=(1917, 424)
+[2025-10-04 18:06:46,260][root][INFO] - Raw data shapes: X=(1917, 1671), Y=(1917, 424)
+[2025-10-04 18:06:46,260][root][INFO] - Sample batch shapes: X=(64, 1671), Y=(64, 424)
+[2025-10-04 18:06:46,882][root][INFO] - Trial 0 started with params: {'input_size': 1671, 'output_size': 424, 'output_len': 5, 'input_len': 32, 'hidden_size': 192, 'num_layers': 3, 'batch_size': 32, 'dropout': 0.5, 'decom_kernel_size': 40, 'top_k_modes': 5, 'nhead': 16, 'dim_feedforward': 128}, lr=0.02414513756137345, optimizer=Adam, lr_policy=constant
+[2025-10-04 18:06:47,192][root][INFO] - Performed memory cleaning.
+[2025-10-04 18:06:47,273][root][INFO] - Trial 1 started with params: {'input_size': 1671, 'output_size': 424, 'output_len': 5, 'input_len': 48, 'hidden_size': 176, 'num_layers': 6, 'batch_size': 16, 'dropout': 0.30000000000000004, 'decom_kernel_size': 20, 'top_k_modes': 8, 'nhead': 16, 'dim_feedforward': 960}, lr=0.005822335421620172, optimizer=AdamW, lr_policy=clr
+[2025-10-04 18:06:47,541][root][INFO] - GPU Memory: 1.06 GB used out of 8.00 GB
+[2025-10-04 18:06:47,541][root][INFO] - Performed memory cleaning.
+[2025-10-04 18:06:47,541][root][INFO] - GPU Memory: 1.06 GB used out of 8.00 GB
+[2025-10-04 18:06:47,547][root][INFO] - Trial 1: X_raw NaNs=0, Y_raw NaNs=0, input_size=1671
+[2025-10-04 18:06:47,547][root][INFO] - Trial 0: X_raw NaNs=0, Y_raw NaNs=0, input_size=1671
+[2025-10-04 18:06:47,871][root][INFO] - WindowDataset created: Xw shape=(1881, 32, 1671), Yw shape=(1881, 5, 424), invalid_windows: 0
+[2025-10-04 18:06:47,872][root][INFO] - Trial 0 windowed shapes: Xw=(1881, 32, 1671), Yw=(1881, 5, 424)
+[2025-10-04 18:06:48,016][root][INFO] - Creating trainer with device=cuda
+[2025-10-04 18:06:48,025][root][INFO] - WindowDataset created: Xw shape=(1865, 48, 1671), Yw shape=(1865, 5, 424), invalid_windows: 0
+[2025-10-04 18:06:48,026][root][INFO] - Trial 1 windowed shapes: Xw=(1865, 48, 1671), Yw=(1865, 5, 424)
+[2025-10-04 18:06:48,069][root][INFO] - Trainer initialized with device=cuda
+[2025-10-04 18:06:48,069][root][INFO] - Trial 0: Training data shapes: X=torch.Size([1881, 32, 1671]), Y=torch.Size([1881, 5, 424])
+[2025-10-04 18:06:48,215][root][INFO] - Creating trainer with device=cuda
+[2025-10-04 18:06:48,276][root][INFO] - Trainer initialized with device=cuda
+[2025-10-04 18:06:48,276][root][INFO] - Trial 1: Training data shapes: X=torch.Size([1865, 48, 1671]), Y=torch.Size([1865, 5, 424])
+[2025-10-04 18:06:49,242][root][INFO] - Decomposer input shape: torch.Size([32, 32, 1671])
+[2025-10-04 18:06:49,338][root][ERROR] - Trial 0 failed: The size of tensor a (71) must match the size of tensor b (72) at non-singleton dimension 2
+Traceback (most recent call last):
+  File "/root/vscode/portfolio/mitsui_2025/src/study.py", line 223, in objective
+    val_loss, loss_tracker = trainer.train(train_tensors[0].numpy(), train_tensors[1].numpy())
+                             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/root/vscode/portfolio/mitsui_2025/src/trainer.py", line 150, in train
+    train_loss = self.train_one_epoch(train_loader)
+                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/root/vscode/portfolio/mitsui_2025/src/trainer.py", line 87, in train_one_epoch
+    pred = self.model(xb).squeeze(1)  # (B, num_targets)
+           ^^^^^^^^^^^^^^
+  File "/root/anaconda3/envs/mitsui/lib/python3.11/site-packages/torch/nn/modules/module.py", line 1736, in _wrapped_call_impl
+    return self._call_impl(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/root/anaconda3/envs/mitsui/lib/python3.11/site-packages/torch/nn/modules/module.py", line 1747, in _call_impl
+    return forward_call(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/root/vscode/portfolio/mitsui_2025/src/models.py", line 935, in forward
+    trend, seasonal = self.decomposer(x)  # Both (B, T, F)
+                      ^^^^^^^^^^^^^^^^^^
+  File "/root/anaconda3/envs/mitsui/lib/python3.11/site-packages/torch/nn/modules/module.py", line 1736, in _wrapped_call_impl
+    return self._call_impl(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/root/anaconda3/envs/mitsui/lib/python3.11/site-packages/torch/nn/modules/module.py", line 1747, in _call_impl
+    return forward_call(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/root/vscode/portfolio/mitsui_2025/src/models.py", line 767, in forward
+    seasonal = x - trend  # (B, F, T)
+               ~~^~~~~~~
+RuntimeError: The size of tensor a (71) must match the size of tensor b (72) at non-singleton dimension 2
+
+[2025-10-04 18:06:49,663][root][INFO] - GPU Memory: 1.15 GB used out of 8.00 GB
+[2025-10-04 18:06:49,969][root][INFO] - Performed memory cleaning.
+[2025-10-04 18:06:49,989][root][INFO] - Decomposer input shape: torch.Size([16, 48, 1671])
+[2025-10-04 18:06:49,992][root][ERROR] - Trial 1 failed: The size of tensor a (67) must match the size of tensor b (68) at non-singleton dimension 2
+Traceback (most recent call last):
+  File "/root/vscode/portfolio/mitsui_2025/src/study.py", line 223, in objective
+    val_loss, loss_tracker = trainer.train(train_tensors[0].numpy(), train_tensors[1].numpy())
+                             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/root/vscode/portfolio/mitsui_2025/src/trainer.py", line 150, in train
+    train_loss = self.train_one_epoch(train_loader)
+                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/root/vscode/portfolio/mitsui_2025/src/trainer.py", line 87, in train_one_epoch
+    pred = self.model(xb).squeeze(1)  # (B, num_targets)
+           ^^^^^^^^^^^^^^
+  File "/root/anaconda3/envs/mitsui/lib/python3.11/site-packages/torch/nn/modules/module.py", line 1736, in _wrapped_call_impl
+    return self._call_impl(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/root/anaconda3/envs/mitsui/lib/python3.11/site-packages/torch/nn/modules/module.py", line 1747, in _call_impl
+    return forward_call(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/root/vscode/portfolio/mitsui_2025/src/models.py", line 935, in forward
+    trend, seasonal = self.decomposer(x)  # Both (B, T, F)
+                      ^^^^^^^^^^^^^^^^^^
+  File "/root/anaconda3/envs/mitsui/lib/python3.11/site-packages/torch/nn/modules/module.py", line 1736, in _wrapped_call_impl
+    return self._call_impl(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/root/anaconda3/envs/mitsui/lib/python3.11/site-packages/torch/nn/modules/module.py", line 1747, in _call_impl
+    return forward_call(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/root/vscode/portfolio/mitsui_2025/src/models.py", line 767, in forward
+    seasonal = x - trend  # (B, F, T)
+               ~~^~~~~~~
+RuntimeError: The size of tensor a (67) must match the size of tensor b (68) at non-singleton dimension 2
+
+[2025-10-04 18:06:50,372][root][INFO] - GPU Memory: 1.17 GB used out of 8.00 GB
+[2025-10-04 18:06:50,646][root][INFO] - Performed memory cleaning.
+[2025-10-04 18:06:50,667][root][WARNING] - No completed trials for FED. All trials were pruned or failed. Trials: 2
+[2025-10-04 18:06:50,668][root][INFO] - Trial states: [2, 2]

@@ -149,7 +149,7 @@ class LSTMForecaster(nn.Module):
                  dropout: float, output_len: int, num_targets: int):
         super().__init__()
         self.model_type = 'LSTM'
-        self.output_len, self.num_targets = output_len, num_targets
+        self.output_len, self.num_targets = output_len, num_targets #num_targets = output_size 
         self.lstm = nn.LSTM(input_size, hidden_size, num_layers=num_layers,
                             batch_first=True, dropout=dropout)
         self.head = nn.Linear(hidden_size, num_targets * output_len)
@@ -227,7 +227,7 @@ def do_predict(
     
     metadata = {"date_id": date_id, "target_date_id": target_date_id, "lag": lag}
     #print(f"Prediction --- done! | Duration: {time()-t_s}")
-    return out[0, 0, :], metadata  # (num_targets,), metadata
+    return out[0, lag, :], metadata  # (num_targets,), metadata #pick step = lag (0~4)
 
 # ARIMA forcaster 
 @dataclass 
@@ -363,7 +363,7 @@ class CNNLSTMForecaster(nn.Module):
     """
     def __init__(self, 
                  input_size: int, 
-                 num_targets: int, 
+                 num_targets: int, # num_targets = output_size
                  conv_channels: int=128, 
                  kernel_size: int = 5, 
                  num_conv_layers: int = 2, 
@@ -400,7 +400,7 @@ class CNNLSTMForecaster(nn.Module):
         )
         self.head = nn.Sequential(
             nn.Dropout(dropout), 
-            nn.Linear(lstm_hidden, num_targets) 
+            nn.Linear(lstm_hidden, num_targets * output_len) 
         )
         self.output_len = output_len
         
@@ -419,7 +419,7 @@ class CNNLSTMForecaster(nn.Module):
         y = self.head(last)   # (B, Targets)
 
         # Match your LSTM forcaster API: (B, output_len, Targets)
-        return y.unsqueeze(1) 
+        return y.view(-1, self.output_len, self.num_targets) #(Batch, Horizon, Targets)
 
 def make_windows(Y: np.ndarray, input_len: int, X: Optional=None):
     """ 
@@ -507,12 +507,17 @@ class TemporalBlock(nn.Module):
         return self.relu(out + res)
 
 class TCNForecaster(nn.Module):
-    def __init__(self, input_size: int, num_targets: int, channels_list: list, kernel_size: int, dropout: float):
+    def __init__(self, input_size: int, 
+                 num_targets: int, 
+                 channels_list: list, 
+                 kernel_size: int, 
+                 dropout: float,
+                 output_len: int = 1):
         super().__init__()
         self.model_type = 'TCN'
         self.input_size = input_size
         self.num_targets = num_targets
-        self.output_len = 1
+        self.output_len = output_len 
         layers = []
         num_levels = len(channels_list)
         for i in range(num_levels):
@@ -539,7 +544,8 @@ def build_tcn(cfg, num_features, num_targets):
         num_targets=num_targets,
         channels_list=channels,
         kernel_size=getattr(cfg,"tcn_kernel",3),
-        dropout=cfg.dropout
+        dropout=cfg.dropout, 
+        output_len = cfg.output_len 
     )
     x_scaler = StandardScaler2D()
     return model, x_scaler
@@ -729,7 +735,7 @@ def build_trans(cfg, num_features, num_targets):
         num_layers=cfg.num_layers,
         dim_feedforward=getattr(cfg, "dim_feedforward", cfg.hidden_size * 4),  # FF hidden dim
         dropout=cfg.dropout,
-        output_len=1,  # Typically 1, but can be set higher
+        output_len= cfg.output_len,  # Typically 1, but can be set higher
         num_targets=num_targets,
         max_len=getattr(cfg, "max_len", 5000)  # Max sequence length for PE
     )
@@ -847,40 +853,30 @@ class FEDForecaster(nn.Module):
 
 # Helper for Series Decomposition (inspired by FEDformer's moving average decomposer)
 class SeriesDecomposer(nn.Module):
-    """
-    Decomposes time series into trend and seasonal components using a moving average kernel.
-    - Trend: Smoothed version via avg pooling.
-    - Seasonal: Input - Trend.
-    
-    Args:
-        kernel_size (int): Size of the moving average window (odd recommended).
-    """
-    def __init__(self, kernel_size: int = 25):
+    def __init__(self, kernel_size: int):
         super().__init__()
+        if kernel_size % 2 == 0:
+            print(f"Error - You have put decom_kernel_size:{kernel_size}")
+            print(f"--- Please modify decom_kernel_size in study.py")
+            raise ValueError(f"kernel_size must be odd for symmetric decomposition, got {kernel_size}")
         self.kernel_size = kernel_size
-        self.padding = (kernel_size - 1) // 2
-        self.avg = nn.AvgPool1d(kernel_size=kernel_size, stride=1, padding=0)
+        # Ensure padding maintains the sequence length
+        self.padding = kernel_size - 1  # Total padding to account for kernel size
+        self.avg = nn.AvgPool1d(kernel_size=kernel_size, stride=1, padding=self.padding // 2)
 
     def forward(self, x: torch.Tensor) -> Tuple[torch.Tensor, torch.Tensor]:
-        # x: (B, T, F)
-        if x.dim() != 3:
-            raise ValueError(f"Expected 3D input (B, T, F), got shape {x.shape}")
-        
-        # Pad time dimension manually to avoid issues with torch.nn.functional.pad
-        B, T, F = x.shape
-        x_padded = torch.nn.functional.pad(
-            x, (0, 0, self.padding, self.padding), mode='replicate'  # Pad time dim (T)
-        )  # (B, T + 2*padding, F)
-        
-        # Apply moving average (avg pooling over time)
-        x_padded = x_padded.transpose(1, 2)  # (B, F, T + 2*padding)
-        trend = self.avg(x_padded).transpose(1, 2)  # (B, T, F)
-        
-        # Ensure trend matches input time length
-        if trend.shape[1] != T:
-            trend = trend[:, :T, :]  # Trim if necessary
-        
-        seasonal = x - trend  # (B, T, F)
+        """Input shape: (B, T, F)"""
+        x_trans = x.transpose(1, 2)  # (B, F, T)
+        # Apply padding to maintain sequence length
+        if self.padding % 2 == 1:
+            # For odd kernel_size, pad asymmetrically to ensure exact length
+            x_trans = torch.nn.functional.pad(x_trans, (self.padding // 2, self.padding // 2 + 1))
+        else:
+            x_trans = torch.nn.functional.pad(x_trans, (self.padding // 2, self.padding // 2))
+        trend_trans = self.avg(x_trans)  # (B, F, T)
+        seasonal_trans = x_trans - trend_trans  # (B, F, T)
+        trend = trend_trans.transpose(1, 2)  # (B, T, F)
+        seasonal = seasonal_trans.transpose(1, 2)  # (B, T, F)
         return trend, seasonal
 
 
@@ -1062,7 +1058,7 @@ def build_fed(cfg, num_features, num_targets):
         num_layers=cfg.num_layers,
         dim_feedforward=getattr(cfg, "dim_feedforward", cfg.hidden_size * 4),
         dropout=cfg.dropout,
-        output_len=1,  # Default to 1
+        output_len= cfg.output_len ,  # Default to 1
         num_targets=num_targets,
         decom_kernel_size=getattr(cfg, "decom_kernel_size", 25),
         top_k_modes=getattr(cfg, "top_k_modes", 5),
@@ -1079,3 +1075,163 @@ MODEL_CLASSES = {
     'TCNForecaster': TCNForecaster,
     'FEDForecaster': FEDForecaster  # Add FEDForecaster
 }
+
+
+
+# =======================================================================
+# TimesFM additions (model loader / wrapper)
+# -----------------------------------------------------------------------
+# We keep this minimal and defensive: import TimesFM from the installed
+# package. If import fails, we raise a clear error with instructions.
+# =======================================================================
+import torch
+import logging
+os.environ.setdefault("HF_HUB_DISABLE_PROGRESS_BARS", "1")
+class TimesFMNotFoundError(ImportError):
+    pass
+
+def load_timesfm_heads_bank(bank_path: str,
+                            num_targets: int,
+                            horizon_len: int,
+                            hidden: int = 64,
+                            dropout: float = 0.0,
+                            device: str = "cpu") -> Dict[str, nn.Module]:
+    """
+    This function is for interence.
+    Build a ModuleDict of heads and load the packed state_dict.
+    Returns a dict-like (ModuleDict) with keys 't0'..'t{num_targets-1}'.
+    """
+    bank = nn.ModuleDict({f"t{j}": make_timesfm_head(horizon_len, hidden, dropout)
+                          for j in range(num_targets)})
+    state = torch.load(bank_path, map_location=device)
+    bank.load_state_dict(state)
+    bank.to(device)
+    bank.eval()
+    return bank
+
+
+def load_timesfm_model(model_name: str = "google/timesfm-1.0-200m-pytorch",
+                       device: str | None = None,
+                       horizon_len: int = 128,
+                       context_len: int | None = None,
+                       batch_size: int = 32,
+                       local_ckpt:str = '../checkpoints/timesfm-1.0-200m/torch_model.ckpt'):
+    """
+    Load TimesFM and return a PyTorch nn.Module suitable for finetuning.
+    Supports:
+      A) timesfm==1.3.x (your 'TimesFmTorch' class from timesfm_torch.py)
+      B) newer TimesFm(...).torch_model API
+    """
+    if device is None:
+        device = "cuda" if (torch.cuda.is_available()) else "cpu"
+
+    # -------- Path B: TimesFm(...).torch_model (if available) --------
+    try:
+        import timesfm as t
+        backend = "gpu" if ("cuda" in device and torch.cuda.is_available()) else "cpu"
+        hp_kwargs = dict(backend=backend, per_core_batch_size=int(batch_size), horizon_len=int(horizon_len))
+        if context_len is not None:
+            hp_kwargs["context_len"] = int(context_len)
+        tfm = t.TimesFm(
+            hparams=t.TimesFmHparams(**hp_kwargs),
+            checkpoint=t.TimesFmCheckpoint(huggingface_repo_id=model_name),
+        )
+        core = getattr(tfm, "torch_model", None)
+        if isinstance(core, nn.Module):
+            core.to(device).train()
+            for p in core.parameters(): p.requires_grad = True
+            assert sum(p.numel() for p in core.parameters()) > 0, "TimesFM torch_model has 0 params."
+            return core
+    except Exception:
+        pass  # fall through to the TimesFmTorch path
+
+    # -------- Path A: your v1.3.x 'TimesFmTorch' (timesfm_torch.py) --------
+    try:
+        # Try common module paths
+        try:
+            from timesfm.torch.timesfm_torch import TimesFmTorch
+        except Exception:
+            from timesfm.timesfm_torch import TimesFmTorch  # your layout
+
+        from timesfm import timesfm_base as base
+
+        # Build the object and explicitly load the checkpoint
+        hp = base.TimesFmHparams(
+            backend="gpu" if ("cuda" in device and torch.cuda.is_available()) else "cpu",
+            per_core_batch_size=int(batch_size),
+            horizon_len=int(horizon_len),
+            **({"context_len": int(context_len)} if context_len is not None else {})
+        )
+        if local_ckpt:
+            ckpt = base.TimesFmCheckpoint(path=local_ckpt)
+        else:
+            ckpt = base.TimesFmCheckpoint(huggingface_repo_id=model_name)
+        tfm_torch = TimesFmTorch(hparams=hp, checkpoint=ckpt)
+        tfm_torch.load_from_checkpoint(ckpt)  # <- crucial for v1.3.x
+
+        core = getattr(tfm_torch, "_model", None)  # PatchedTimeSeriesDecoder
+        if not isinstance(core, nn.Module):
+            raise RuntimeError("TimesFmTorch._model not set after load_from_checkpoint().")
+
+        core.to(device).train()
+        for p in core.parameters(): p.requires_grad = True
+        assert sum(p.numel() for p in core.parameters()) > 0, "TimesFmTorch core has 0 params."
+        return core
+
+    except Exception as e:
+        raise RuntimeError(
+            "Failed to load a trainable TimesFM model. "
+            "Checked both TimesFm(...).torch_model and TimesFmTorch paths."
+        ) from e
+
+
+class TimesFMPerTargetHead(nn.Module):
+    """
+    Tiny MLP head mapping [B, H] -> [B, H].
+    Default: residual 2-layer MLP; cheap and expressive.
+    """
+    def __init__(self, horizon_len: int, hidden: int = 64, dropout: float = 0.0):
+        super().__init__()
+        self.net = nn.Sequential(
+            nn.Linear(horizon_len, hidden),
+            nn.GELU(),
+            nn.Dropout(dropout),
+            nn.Linear(hidden, horizon_len),
+        )
+
+    def forward(self, x):                 # x: [B, H]
+        return x + self.net(x)            # residual calibration
+
+
+class TimesFMHeadWrapper(nn.Module):
+    """
+    Wraps a TimesFM torch model and swaps the mean-channel ([..., 0]) of patch 0
+    with the output of a small per-target head.
+    - base:  returns [B, P, H, 1+Q]
+    - head:  takes [B, H] and returns [B, H]
+    """
+    def __init__(self, base: nn.Module, head: nn.Module | None, freeze_base: bool = True):
+        super().__init__()
+        self.base = base
+        self.head = head
+        if freeze_base:
+            for p in self.base.parameters():
+                p.requires_grad = False
+
+    def forward(self, x_context, x_padding, freq):
+        pred = self.base(x_context, x_padding, freq)      # [B, P, H, 1+Q]
+        if self.head is None:
+            return pred
+        mean = pred[..., 0]                               # [B, P, H]
+        # calibrate first patch only (what your finetuner uses)
+        base_feat = mean[:, 0, :]                         # [B, H]
+        adj = self.head(base_feat)                        # [B, H]
+        mean = mean.clone()
+        mean[:, 0, :] = adj
+        pred = pred.clone()
+        pred[..., 0] = mean
+        return pred
+
+
+def make_timesfm_head(horizon_len: int, hidden: int = 64, dropout: float = 0.0):
+    return TimesFMPerTargetHead(horizon_len, hidden, dropout)

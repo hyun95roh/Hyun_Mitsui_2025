@@ -1,0 +1,131 @@
+[2025-10-04 18:54:22,832][root][INFO] - Configuration: experiment:
+  data_path: ../data
+  checkpoint_dir: ../checkpoints
+  models:
+  - fed
+  row_fraction: 1.0
+  num_targets: 424
+  filter_features: false
+  optuna:
+    direction: minimize
+    n_trials: 2
+    n_jobs: 2
+model:
+  model_type: default
+  model_class: default
+  trainer_class: default
+  params:
+    input_size: 1672
+    output_size: 424
+    input_len: 64
+    output_len: 5
+    batch_size: 16
+    hidden_size: 128
+    num_layers: 2
+    dropout: 0.1
+    epochs: 10
+    patience: 5
+    channels: 64
+    blocks: 3
+    kernel_size: 5
+    num_conv_layers: 2
+    tcn_kernel: 3
+    decom_kernel_size: 25
+    top_k_modes: 5
+    nhead: 8
+    dim_feedforward: 512
+    weight_decay: 0.001
+    scheduler_patience: 5
+    scheduler_factor: 0.5
+    clip_grad_norm: 1.0
+    partially_finite_target: false
+  lr: 0.001
+  optimizer: Adam
+  lr_policy: constant
+
+[2025-10-04 18:54:22,837][root][INFO] - Set random seed to 42 for reproducibility.
+[2025-10-04 18:54:22,837][root][INFO] - Loading train.csv from ../data/train.csv
+[2025-10-04 18:54:22,933][root][INFO] - Loading train_labels.csv from ../data/train_labels.csv
+[2025-10-04 18:54:23,039][root][INFO] - Loading target_pairs.csv from ../data/target_pairs.csv
+[2025-10-04 18:54:23,239][root][INFO] - X_full NaNs after imputation: 0
+[2025-10-04 18:54:23,240][root][INFO] - Y_full NaNs before imputation: 0
+[2025-10-04 18:54:23,241][root][INFO] - Y_full NaNs after imputation: 0
+[2025-10-04 18:54:23,241][root][INFO] - X_full feature count: 1671
+[2025-10-04 18:54:23,249][root][INFO] - Data loaded: X_full_np shape=(1917, 1671), Y_full_np shape=(1917, 424)
+[2025-10-04 18:54:23,249][root][INFO] - Raw data shapes: X=(1917, 1671), Y=(1917, 424)
+[2025-10-04 18:54:23,249][root][INFO] - Sample batch shapes: X=(64, 1671), Y=(64, 424)
+[2025-10-04 18:54:23,816][root][INFO] - Trial 6 started with params: {'input_size': 1671, 'output_size': 424, 'output_len': 5, 'input_len': 48, 'hidden_size': 48, 'num_layers': 5, 'batch_size': 32, 'dropout': 0.0, 'decom_kernel_size': 15, 'top_k_modes': 10, 'nhead': 8, 'dim_feedforward': 320}, lr=0.07017069544932893, optimizer=SGD, lr_policy=onecycle
+[2025-10-04 18:54:24,156][root][INFO] - Performed memory cleaning.
+[2025-10-04 18:54:24,242][root][INFO] - Trial 7 started with params: {'input_size': 1671, 'output_size': 424, 'output_len': 5, 'input_len': 32, 'hidden_size': 224, 'num_layers': 2, 'batch_size': 32, 'dropout': 0.2, 'decom_kernel_size': 21, 'top_k_modes': 8, 'nhead': 16, 'dim_feedforward': 448}, lr=0.0020135671682198074, optimizer=SGD, lr_policy=onecycle
+[2025-10-04 18:54:24,499][root][INFO] - GPU Memory: 1.06 GB used out of 8.00 GB
+[2025-10-04 18:54:24,499][root][INFO] - Performed memory cleaning.
+[2025-10-04 18:54:24,500][root][INFO] - GPU Memory: 1.06 GB used out of 8.00 GB
+[2025-10-04 18:54:24,504][root][INFO] - Trial 6: X_raw NaNs=0, Y_raw NaNs=0, input_size=1671
+[2025-10-04 18:54:24,504][root][INFO] - Trial 7: X_raw NaNs=0, Y_raw NaNs=0, input_size=1671
+[2025-10-04 18:54:24,764][root][INFO] - WindowDataset created: Xw shape=(1881, 32, 1671), Yw shape=(1881, 5, 424), invalid_windows: 0
+[2025-10-04 18:54:24,765][root][INFO] - Trial 7 windowed shapes: Xw=(1881, 32, 1671), Yw=(1881, 5, 424)
+[2025-10-04 18:54:24,900][root][INFO] - Creating trainer with device=cuda
+[2025-10-04 18:54:24,906][root][INFO] - WindowDataset created: Xw shape=(1865, 48, 1671), Yw shape=(1865, 5, 424), invalid_windows: 0
+[2025-10-04 18:54:24,907][root][INFO] - Trial 6 windowed shapes: Xw=(1865, 48, 1671), Yw=(1865, 5, 424)
+[2025-10-04 18:54:24,987][root][INFO] - Trainer initialized with device=cuda
+[2025-10-04 18:54:24,987][root][INFO] - Trial 7: Training data shapes: X=torch.Size([1881, 32, 1671]), Y=torch.Size([1881, 5, 424])
+[2025-10-04 18:54:25,062][root][INFO] - Creating trainer with device=cuda
+[2025-10-04 18:54:25,072][root][INFO] - Trainer initialized with device=cuda
+[2025-10-04 18:54:25,072][root][INFO] - Trial 6: Training data shapes: X=torch.Size([1865, 48, 1671]), Y=torch.Size([1865, 5, 424])
+[2025-10-04 18:54:29,454][root][INFO] - Model: FED, Epoch 1/25: Train Loss=0.016201, Val Loss=0.023161
+[2025-10-04 18:54:29,896][root][INFO] - Model: FED, Epoch 1/25: Train Loss=0.019618, Val Loss=0.024108
+[2025-10-04 18:54:31,263][root][INFO] - Model: FED, Epoch 2/25: Train Loss=0.015607, Val Loss=0.022488
+[2025-10-04 18:54:32,384][root][INFO] - Model: FED, Epoch 2/25: Train Loss=0.013802, Val Loss=0.022349
+[2025-10-04 18:54:33,160][root][INFO] - Model: FED, Epoch 3/25: Train Loss=0.015233, Val Loss=0.021944
+[2025-10-04 18:54:34,925][root][INFO] - Model: FED, Epoch 3/25: Train Loss=0.012248, Val Loss=0.019136
+[2025-10-04 18:54:35,037][root][INFO] - Model: FED, Epoch 4/25: Train Loss=0.014843, Val Loss=0.021379
+[2025-10-04 18:54:37,077][root][INFO] - Model: FED, Epoch 5/25: Train Loss=0.014544, Val Loss=0.020857
+[2025-10-04 18:54:37,382][root][INFO] - Model: FED, Epoch 4/25: Train Loss=0.010971, Val Loss=0.020458
+[2025-10-04 18:54:39,212][root][INFO] - Model: FED, Epoch 6/25: Train Loss=0.014233, Val Loss=0.020419
+[2025-10-04 18:54:39,880][root][INFO] - Model: FED, Epoch 5/25: Train Loss=0.010644, Val Loss=0.019389
+[2025-10-04 18:54:41,195][root][INFO] - Model: FED, Epoch 7/25: Train Loss=0.013912, Val Loss=0.019984
+[2025-10-04 18:54:42,385][root][INFO] - Model: FED, Epoch 6/25: Train Loss=0.010366, Val Loss=0.015487
+[2025-10-04 18:54:43,158][root][INFO] - Model: FED, Epoch 8/25: Train Loss=0.013609, Val Loss=0.019567
+[2025-10-04 18:54:44,922][root][INFO] - Model: FED, Epoch 7/25: Train Loss=0.009496, Val Loss=0.016927
+[2025-10-04 18:54:45,245][root][INFO] - Model: FED, Epoch 9/25: Train Loss=0.013340, Val Loss=0.019186
+[2025-10-04 18:54:47,343][root][INFO] - Model: FED, Epoch 10/25: Train Loss=0.013117, Val Loss=0.018807
+[2025-10-04 18:54:47,372][root][INFO] - Model: FED, Epoch 8/25: Train Loss=0.009428, Val Loss=0.015809
+[2025-10-04 18:54:49,281][root][INFO] - Model: FED, Epoch 11/25: Train Loss=0.012853, Val Loss=0.018451
+[2025-10-04 18:54:49,865][root][INFO] - Model: FED, Epoch 9/25: Train Loss=0.009028, Val Loss=0.015548
+[2025-10-04 18:54:51,308][root][INFO] - Model: FED, Epoch 12/25: Train Loss=0.012686, Val Loss=0.018144
+[2025-10-04 18:54:52,305][root][INFO] - Model: FED, Epoch 10/25: Train Loss=0.008559, Val Loss=0.015172
+[2025-10-04 18:54:53,258][root][INFO] - Model: FED, Epoch 13/25: Train Loss=0.012467, Val Loss=0.017791
+[2025-10-04 18:54:54,856][root][INFO] - Model: FED, Epoch 11/25: Train Loss=0.008460, Val Loss=0.015786
+[2025-10-04 18:54:55,313][root][INFO] - Model: FED, Epoch 14/25: Train Loss=0.012236, Val Loss=0.017479
+[2025-10-04 18:54:57,346][root][INFO] - Model: FED, Epoch 15/25: Train Loss=0.012024, Val Loss=0.017201
+[2025-10-04 18:54:57,358][root][INFO] - Model: FED, Epoch 12/25: Train Loss=0.008146, Val Loss=0.015846
+[2025-10-04 18:54:59,318][root][INFO] - Model: FED, Epoch 16/25: Train Loss=0.011853, Val Loss=0.016923
+[2025-10-04 18:54:59,819][root][INFO] - Model: FED, Epoch 13/25: Train Loss=0.008135, Val Loss=0.016371
+[2025-10-04 18:55:01,391][root][INFO] - Model: FED, Epoch 17/25: Train Loss=0.011661, Val Loss=0.016653
+[2025-10-04 18:55:02,277][root][INFO] - Model: FED, Epoch 14/25: Train Loss=0.007867, Val Loss=0.014691
+[2025-10-04 18:55:03,750][root][INFO] - Model: FED, Epoch 18/25: Train Loss=0.011452, Val Loss=0.016397
+[2025-10-04 18:55:05,110][root][INFO] - Model: FED, Epoch 15/25: Train Loss=0.007494, Val Loss=0.013992
+[2025-10-04 18:55:05,926][root][INFO] - Model: FED, Epoch 19/25: Train Loss=0.011217, Val Loss=0.016104
+[2025-10-04 18:55:07,951][root][INFO] - Model: FED, Epoch 16/25: Train Loss=0.007259, Val Loss=0.014065
+[2025-10-04 18:55:08,067][root][INFO] - Model: FED, Epoch 20/25: Train Loss=0.011111, Val Loss=0.015864
+[2025-10-04 18:55:10,336][root][INFO] - Model: FED, Epoch 21/25: Train Loss=0.010933, Val Loss=0.015674
+[2025-10-04 18:55:10,658][root][INFO] - Model: FED, Epoch 17/25: Train Loss=0.007377, Val Loss=0.013968
+[2025-10-04 18:55:12,587][root][INFO] - Model: FED, Epoch 22/25: Train Loss=0.010782, Val Loss=0.015459
+[2025-10-04 18:55:13,378][root][INFO] - Model: FED, Epoch 18/25: Train Loss=0.007244, Val Loss=0.013559
+[2025-10-04 18:55:14,724][root][INFO] - Model: FED, Epoch 23/25: Train Loss=0.010613, Val Loss=0.015258
+[2025-10-04 18:55:16,105][root][INFO] - Model: FED, Epoch 19/25: Train Loss=0.007017, Val Loss=0.012929
+[2025-10-04 18:55:17,022][root][INFO] - Model: FED, Epoch 24/25: Train Loss=0.010480, Val Loss=0.015045
+[2025-10-04 18:55:18,939][root][INFO] - Model: FED, Epoch 20/25: Train Loss=0.006880, Val Loss=0.012853
+[2025-10-04 18:55:19,159][root][INFO] - Model: FED, Epoch 25/25: Train Loss=0.010318, Val Loss=0.014867
+[2025-10-04 18:55:19,270][root][INFO] - Saved best model to ../checkpoints/FED_trial7_20251004_185519.pt
+[2025-10-04 18:55:19,557][root][INFO] - GPU Memory: 1.29 GB used out of 8.00 GB
+[2025-10-04 18:55:19,877][root][INFO] - Performed memory cleaning.
+[2025-10-04 18:55:21,088][root][INFO] - Model: FED, Epoch 21/25: Train Loss=0.006712, Val Loss=0.012834
+[2025-10-04 18:55:22,866][root][INFO] - Model: FED, Epoch 22/25: Train Loss=0.006587, Val Loss=0.012463
+[2025-10-04 18:55:24,581][root][INFO] - Model: FED, Epoch 23/25: Train Loss=0.006497, Val Loss=0.012517
+[2025-10-04 18:55:26,026][root][INFO] - Model: FED, Epoch 24/25: Train Loss=0.006376, Val Loss=0.012280
+[2025-10-04 18:55:27,493][root][INFO] - Model: FED, Epoch 25/25: Train Loss=0.006292, Val Loss=0.012167
+[2025-10-04 18:55:27,595][root][INFO] - Saved best model to ../checkpoints/FED_trial6_20251004_185527.pt
+[2025-10-04 18:55:27,858][root][INFO] - GPU Memory: 1.18 GB used out of 8.00 GB
+[2025-10-04 18:55:28,146][root][INFO] - Performed memory cleaning.
+[2025-10-04 18:55:28,248][root][INFO] - Best trial for FED: 5, value: 0.00407287228425237, params: {'batch_size': 32, 'input_len': 48, 'hidden_size': 144, 'num_layers': 1, 'dropout': 0.0, 'lr': 0.00012823653444767337, 'optimizer': 'AdamW', 'lr_policy': 'clr', 'decom_kernel_size': 45, 'top_k_modes': 4, 'nhead': 8, 'dim_feedforward': 960}

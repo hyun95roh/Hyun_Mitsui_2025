@@ -1,13 +1,22 @@
+# From sibiling module
+from configs import TrainConfig
+from utils import log_returns
+
 import pandas as pd 
 import numpy as np 
 import torch 
 import os 
-import logging  
+import logging, traceback
 from torch.utils.data import Dataset, DataLoader, TensorDataset
 from typing import Tuple, List, Dict, Callable, Optional, Protocol, Iterable
-from configs import TrainConfig
-from utils import log_returns
-
+from gluonts.dataset.common import ListDataset
+from gluonts.dataset.field_names import FieldName
+from gluonts.transform import (
+    AddAgeFeature, AddObservedValuesIndicator, AddTimeFeatures,
+    AsNumpyArray, Chain, ExpectedNumInstanceSampler, RemoveFields,
+    SelectFields, SetField, TestSplitSampler, Transformation, ValidationSplitSampler, VstackFeatures
+)
+from gluonts.time_feature import time_features_from_frequency_str
 
 # Set up logging
 logging.basicConfig(
@@ -29,35 +38,33 @@ class WindowDataset(Dataset):
       x: (N_windows, input_len, F)
       y: (N_windows, output_len, num_targets)
     """
-    def __init__(self, X_full: Optional[np.ndarray], Y_full: np.ndarray,
-                 input_len: int = 64, output_len: int = 1):
-        # Shape normalize
+    def __init__(self, X_full: Optional[np.ndarray], Y_full: np.ndarray, input_len: int = 64, output_len: int = 1):
         Y_full = np.asarray(Y_full, dtype=np.float32)
         if Y_full.ndim == 1:
-            Y_full = Y_full[:, None]  # (N, 1)
+            Y_full = Y_full[:, None]
         if X_full is None:
             X_full = Y_full.astype(np.float32)
         else:
             X_full = np.asarray(X_full, dtype=np.float32)
-
         if X_full.ndim != 2 or Y_full.ndim != 2:
             raise ValueError(f"Expected X_full (N, F) and Y_full (N, T), got shapes {X_full.shape}, {Y_full.shape}")
-
         self.x, self.y = [], []
         N = len(Y_full)
+        invalid_windows = 0
         for i in range(N - input_len - output_len + 1):
-            xw = X_full[i:i+input_len]                        # (input_len, F)
-            yw = Y_full[i+input_len:i+input_len+output_len]    # (output_len, num_targets)
+            xw = X_full[i:i+input_len]
+            yw = Y_full[i+input_len : i+input_len+output_len]
             if np.all(np.isfinite(xw)) and np.all(np.isfinite(yw)):
                 self.x.append(xw)
                 self.y.append(yw)
-        self.x = np.asarray(self.x, dtype=np.float32)  # (N_windows, input_len, F)
-        self.y = np.asarray(self.y, dtype=np.float32)  # (N_windows, output_len, num_targets)
-
+            else:
+                invalid_windows += 1
+        self.x = np.asarray(self.x, dtype=np.float32)
+        self.y = np.asarray(self.y, dtype=np.float32)
         if len(self.x) == 0:
+            logging.error(f"No valid windows created. Input length: {N}, input_len: {input_len}, output_len: {output_len}, invalid_windows: {invalid_windows}")
             raise ValueError(f"No valid windows created. Input length: {N}, input_len: {input_len}, output_len: {output_len}")
-
-        logging.info(f"WindowDataset created: Xw shape={self.x.shape}, Yw shape={self.y.shape}")
+        logging.info(f"WindowDataset created: Xw shape={self.x.shape}, Yw shape={self.y.shape}, invalid_windows: {invalid_windows}")
 
     def __len__(self): return len(self.x)
     def __getitem__(self, idx): return self.x[idx], self.y[idx]
@@ -115,6 +122,45 @@ def impute_features_with_staleness(df: pd.DataFrame, date_col="date_id", cap_day
         staleness_df.reset_index(),                            # X_stale
         miss.reset_index(),                                    # X_miss
     )
+
+def create_gluonts_transformation(config: dict, freq: str = 'D'):
+    """GluonTS transformation chain for multivariate time series with shared features."""
+    remove_fields = [
+        FieldName.FEAT_STATIC_REAL,
+        FieldName.FEAT_STATIC_CAT,  # No static features in competition data
+    ]
+
+    time_features = time_features_from_frequency_str(freq)  # e.g., [year, month, day, dayofweek]
+    transformation = Chain([
+        RemoveFields(remove_fields),
+        AddObservedValuesIndicator(
+            target_field=FieldName.TARGET,
+            output_field=FieldName.OBSERVED_VALUES,  # Binary mask for missing values
+            imputation_method=None  # Use default (mean) imputation for NaNs
+        ),
+        AddTimeFeatures(
+            start_field=FieldName.START,
+            target_field=FieldName.TARGET,
+            output_field=FieldName.FEAT_TIME,  # Store time features
+            time_features=time_features,
+            pred_length=config['prediction_length']
+        ),
+        VstackFeatures(
+            input_fields=[FieldName.FEAT_DYNAMIC_REAL, FieldName.FEAT_TIME],  # Stack dynamic + time features
+            output_field=FieldName.FEAT_DYNAMIC_REAL  # Overwrite dynamic real with stacked features
+        ),
+        AsNumpyArray(
+            field=FieldName.FEAT_DYNAMIC_REAL,
+            expected_ndim=2,  # (T, F + time_features)
+            dtype=np.float32
+        ),
+        AsNumpyArray(
+            field=FieldName.TARGET,
+            expected_ndim=2,  # (T, 424) for multivariate targets
+            dtype=np.float32
+        ),
+    ])
+    return transformation
 
 def generate_single_target(
         prices_idxed: pd.DataFrame, 
@@ -254,6 +300,8 @@ class dataprep:
         self.Xi, self.Xs, self.Xm = None, None, None 
         self.X_full, self.Y_full = None, None 
         self.X_full_np, self.Y_full_np = None, None 
+        self.target_pairs_df = None 
+        self._prep_done = False 
 
     def validate_paths(self):
         """Check if data files exist."""
@@ -292,15 +340,78 @@ class dataprep:
         self.X_full = X_full.reset_index().rename(columns={'index': 'date_id'})
 
     def one_shot_prep(self):
-        self.load_data()
-        self.build_targets()
-        self.impute_features()
-        self.Y_full = self.targets_df  # Preserve DataFrame
-        logging.info(f"Y_full shape: {self.Y_full.shape}")
-        self.Y_full_np = self.targets_df.to_numpy(float)
-        self.X_full_np = self.X_full.loc[self.targets_df.index].to_numpy(float)
-        logging.info(f"Final shapes report: features: {self.X_full.shape}, targets: {self.Y_full.shape}, "
-                     f"X_full_np: {self.X_full_np.shape}, Y_full_np: {self.Y_full_np.shape}")
+        """Load and preprocess data once, storing results."""
+        if self._prep_done:
+            return
+        try:
+            # Load data files
+            train_path = os.path.join(self.data_path, 'train.csv')
+            labels_path = os.path.join(self.data_path, 'train_labels.csv')
+            pairs_path = os.path.join(self.data_path, 'target_pairs.csv')
+
+            # Check if files exist
+            for path in [train_path, labels_path, pairs_path]:
+                if not os.path.exists(path):
+                    raise FileNotFoundError(f"Data file not found: {path}")
+
+            logging.info(f"Loading train.csv from {train_path}")
+            self.X_full = pd.read_csv(train_path)
+            logging.info(f"Loading train_labels.csv from {labels_path}")
+            self.Y_full = pd.read_csv(labels_path)
+            logging.info(f"Loading target_pairs.csv from {pairs_path}")
+            self.target_pairs_df = pd.read_csv(pairs_path)
+
+            # Validate data
+            if self.X_full.empty:
+                raise ValueError("X_full (train.csv) is empty")
+            if self.Y_full.empty:
+                raise ValueError("Y_full (train_labels.csv) is empty")
+            if self.target_pairs_df.empty:
+                raise ValueError("target_pairs_df (target_pairs.csv) is empty")
+
+            # Ensure date_id is present
+            if 'date_id' not in self.X_full.columns:
+                raise ValueError("X_full missing 'date_id' column")
+            if 'date_id' not in self.Y_full.columns:
+                raise ValueError("Y_full missing 'date_id' column")
+
+            # Impute NaNs in X_full and include staleness/missingness
+            X_imputed, X_stale, X_miss = impute_features_with_staleness(self.X_full)
+            # Concatenate features
+            X_imputed = X_imputed.set_index('date_id')
+            X_stale = X_stale.set_index('date_id').add_suffix('_stale')
+            X_miss = X_miss.set_index('date_id').add_suffix('_miss')
+            self.X_full = pd.concat([X_imputed, X_stale, X_miss], axis=1).reset_index()
+
+            # Impute NaNs in Y_full
+            self.Y_full = self.Y_full.set_index('date_id').ffill().bfill().reset_index()
+
+            # Log NaN statistics and feature counts
+            x_nans = self.X_full.drop(columns=['date_id']).isna().sum().sum()
+            y_nans_before = self.Y_full.drop(columns=['date_id']).isna().sum().sum()
+            logging.info(f"X_full NaNs after imputation: {x_nans}")
+            logging.info(f"Y_full NaNs before imputation: {y_nans_before}")
+            y_nans_after = self.Y_full.drop(columns=['date_id']).isna().sum().sum()
+            logging.info(f"Y_full NaNs after imputation: {y_nans_after}")
+            logging.info(f"X_full feature count: {len(self.X_full.columns) - 1}")  # Exclude date_id
+
+            # Convert to numpy
+            self.X_full_np = self.X_full.drop(columns=['date_id']).to_numpy(dtype=np.float32)
+            self.Y_full_np = self.Y_full.drop(columns=['date_id']).to_numpy(dtype=np.float32)
+
+            # Validate numpy arrays
+            if self.X_full_np is None or self.Y_full_np is None:
+                raise ValueError("Failed to convert X_full or Y_full to numpy arrays")
+            if self.X_full_np.shape[0] == 0 or self.Y_full_np.shape[0] == 0:
+                raise ValueError(f"Empty numpy arrays: X_full_np={self.X_full_np.shape}, Y_full_np={self.Y_full_np.shape}")
+
+            logging.info(f"Data loaded: X_full_np shape={self.X_full_np.shape}, Y_full_np shape={self.Y_full_np.shape}")
+            self._prep_done = True
+
+        except Exception as e:
+            logging.error(f"Error in one_shot_prep: {str(e)}\n{traceback.format_exc()}")
+            raise
+
 
     def preprocess_for_frequency(self, X: np.ndarray, use_fft: bool = False) -> np.ndarray:
         if not use_fft:
@@ -310,18 +421,41 @@ class dataprep:
         return X_aug
 
 
+    def GluonTS_transform(self, cfg, model_type=['TSTP']):
+        """Add time features manually for multivariate time series, bypassing ListDataset."""
+        if not hasattr(self, 'X_full_np') or not hasattr(self, 'Y_full_np'):
+            self.one_shot_prep()
+        X, Y = self.X_full_np, self.Y_full_np  # (N, 559), (N, 424)
+
+        # Add time features (daily: dayofweek, month, quarter, year)
+        start_date = pd.Timestamp("2020-01-01")  # Adjust to min(prices_df['date_id']) if known
+        dates = pd.date_range(start=start_date, periods=X.shape[0], freq='D')
+        time_df = pd.DataFrame(index=dates)
+        time_df['dayofweek'] = time_df.index.dayofweek.astype(np.float32)
+        time_df['month'] = time_df.index.month.astype(np.float32)
+        time_df['quarter'] = time_df.index.quarter.astype(np.float32)
+        time_df['year'] = (time_df.index.year - time_df.index.year.min()).astype(np.float32)  # Normalize year
+        time_feats = time_df.to_numpy()  # (N, 4)
+
+        # Concatenate time features to X
+        X_transformed = np.concatenate([X, time_feats], axis=1)  # (N, 559 + 4)
+        Y_transformed = np.nan_to_num(Y, nan=0.0)  # Impute NaNs, align with one_shot_prep
+
+        logging.info(f"Manual time features added: X_transformed shape {X_transformed.shape}, Y_transformed shape {Y_transformed.shape}")
+        return X_transformed, Y_transformed
+
+
     def load_and_preprocess_data(self, data_path: str, cfg: TrainConfig, subset: dict = None, filter_features: bool = False):
         """
         Load and preprocess data, creating DataLoaders with optional subsetting and feature filtering.
         """
         self.one_shot_prep()
-        
+
         X = self.X_full_np
         Y = self.Y_full_np
-        
+
         logging.info(f"Raw X shape: {X.shape}, Y shape: {Y.shape}")
-        
-        # Apply subsetting
+
         if subset:
             row_fraction = subset.get('row_fraction', 1.0)
             num_targets = subset.get('num_targets', Y.shape[1])
@@ -332,8 +466,7 @@ class dataprep:
             X = X[:n_rows]
             Y = Y[:n_rows, :num_targets]
             logging.info(f"Subset X shape: {X.shape}, Y shape: {Y.shape}")
-            
-            # Filter features if requested
+
             if filter_features:
                 target_cols = list(self.Y_full.columns[:num_targets])
                 feature_cols = set()
@@ -356,53 +489,204 @@ class dataprep:
                     logging.error(f"No matching features found for {all_feature_cols}")
                     raise ValueError(f"No matching features found for {all_feature_cols}")
                 X = X[:, feature_indices]
-                logging.info(f"Filtered features for {num_targets} targets: {len(feature_cols)} base features, {len(feature_indices)} total, X shape: {X.shape}")      
+                logging.info(f"Filtered features for {num_targets} targets: {len(feature_cols)} base features, {len(feature_indices)} total, X shape: {X.shape}")
 
-        # Ensure 2D inputs
         if X.ndim != 2 or Y.ndim != 2:
             raise ValueError(f"Expected X (N, F) and Y (N, T), got shapes {X.shape}, {Y.shape}")
-        
-        # Validate input_len
+
         if len(X) < cfg.input_len + cfg.output_len:
             raise ValueError(f"Input length {len(X)} is less than required {cfg.input_len + cfg.output_len} for windowing")
-        
-        # Optional frequency preprocessing
+
         X = self.preprocess_for_frequency(X, use_fft=False)
         logging.info(f"After preprocess X shape: {X.shape}")
-        
+
         cfg.input_size = X.shape[1]
         cfg.output_size = Y.shape[1]
-        
-        # Create windows
-        try:
-            dataset = WindowDataset(X, Y, cfg.input_len, cfg.output_len)
-            Xw, Yw = dataset.x, dataset.y
-            logging.info(f"Windowed X shape: {Xw.shape}, Y shape: {Yw.shape}")
-        except Exception as e:
-            logging.error(f"Windowing failed: {str(e)}")
-            raise
-        
-        # Create TensorDataset
-        dataset = TensorDataset(
-            torch.tensor(Xw, dtype=torch.float32),
-            torch.tensor(Yw, dtype=torch.float32)
-        )
-        
-        # Split
-        N = len(dataset)
-        n_val = max(1, int(0.15 * N))
-        n_test = max(1, int(0.1 * N))
-        n_train = N - n_val - n_test
-        
-        if n_train < 1:
-            raise ValueError(f"Insufficient training samples after split: {n_train}")
-        
-        train_dataset, val_dataset, test_dataset = torch.utils.data.random_split(
-            dataset, [n_train, n_val, n_test], generator=torch.Generator().manual_seed(42)
-        )
-        
-        train_loader = DataLoader(train_dataset, batch_size=cfg.batch_size, shuffle=True)
-        val_loader = DataLoader(val_dataset, batch_size=cfg.batch_size, shuffle=False)
-        test_loader = DataLoader(test_dataset, batch_size=cfg.batch_size, shuffle=False)
-        
-        return train_loader, val_loader, test_loader
+
+        model_name = getattr(cfg, 'model_name', None)
+        if model_name is None:
+            model_name_map = {
+                'LSTMTrainer': 'LSTM',
+                'CNNLSTMTrainer': 'CNNLSTM',
+                'TCNTrainer': 'TCN',
+                'FEDTrainer': 'FED',
+                'TSTPTrainer': 'TSTP',
+                'TimesFMTrainer': 'TimesFM'
+            }
+            model_name = model_name_map.get(getattr(cfg, 'model_class', 'default'), 'default')
+            logging.info(f"model_name not provided in cfg; inferred as {model_name} from model_class")
+
+        if model_name == 'TSTP':
+            transformation = self.create_gluonts_transformation(
+                freq='D',
+                config={'prediction_length': cfg.output_len, 'num_static_real_features': 0}
+            )
+            start_date = pd.Timestamp("2020-01-01")
+            dataset_list = []
+            for i in range(Y.shape[1]):
+                target = Y[:, i]
+                feat_dynamic_real = X
+                dataset_list.append({
+                    FieldName.TARGET: target,
+                    FieldName.START: start_date,
+                    FieldName.FEAT_DYNAMIC_REAL: feat_dynamic_real,
+                })
+            gluonts_dataset = ListDataset(dataset_list, freq='D')
+            transformed_dataset = transformation.apply(gluonts_dataset)
+            
+            # Split train/val
+            N = len(transformed_dataset)
+            n_val = max(1, int(0.15 * N))
+            n_test = max(1, int(0.1 * N))
+            n_train = N - n_val - n_test
+            train_data = list(transformed_dataset)[:n_train]
+            val_data = list(transformed_dataset)[n_train:n_train+n_val]
+            test_data = list(transformed_dataset)[n_train+n_val:]
+            
+            train_dataset = ListDataset(train_data, freq='D')
+            val_dataset = ListDataset(val_data, freq='D')
+            test_dataset = ListDataset(test_data, freq='D')
+            
+            logging.info(f"GluonTS datasets created: train={len(train_dataset)}, val={len(val_dataset)}, test={len(test_dataset)}")
+            return train_dataset, val_dataset, test_dataset
+        else:
+            try:
+                dataset = WindowDataset(X, Y, cfg.input_len, cfg.output_len)
+                Xw, Yw = dataset.x, dataset.y
+                logging.info(f"Windowed X shape: {Xw.shape}, Y shape: {Yw.shape}")
+            except Exception as e:
+                logging.error(f"Windowing failed: {str(e)}")
+                raise
+
+            dataset = TensorDataset(
+                torch.tensor(Xw, dtype=torch.float32),
+                torch.tensor(Yw, dtype=torch.float32)
+            )
+
+            N = len(dataset)
+            n_val = max(1, int(0.15 * N))
+            n_test = max(1, int(0.1 * N))
+            n_train = N - n_val - n_test
+
+            if n_train < 1:
+                raise ValueError(f"Insufficient training samples after split: {n_train}")
+
+            train_dataset, val_dataset, test_dataset = torch.utils.data.random_split(
+                dataset, [n_train, n_val, n_test], generator=torch.Generator().manual_seed(42)
+            )
+
+            train_loader = DataLoader(train_dataset, batch_size=cfg.batch_size, shuffle=True)
+            val_loader = DataLoader(val_dataset, batch_size=cfg.batch_size, shuffle=False)
+            test_loader = DataLoader(test_dataset, batch_size=cfg.batch_size, shuffle=False)
+
+            return train_loader, val_loader, test_loader
+
+
+# =======================================================================
+# TimesFM additions (dataset + dataloader builders)
+# -----------------------------------------------------------------------
+# These utilities keep your original API intact while adding a clean path
+# to build TimesFM-ready (x_context, x_padding, x_future, freq) windows.
+# =======================================================================
+import math
+from dataclasses import dataclass
+from typing import Sequence
+
+class TimesFMSlidingWindowDataset(torch.utils.data.Dataset):
+    """
+    Dataset that returns 4-tuple per sample required by TimesFM finetuner:
+      - x_context:  (context_length, n_features) or (context_length,) for 1-D
+      - x_padding:  (context_length,) binary mask (1 = valid, 0 = padded)
+      - freq:       (1,) small integer code {0,1,2} (daily/weekly/monthly...up to you)
+      - x_future:   (horizon_length, 1) future target steps
+    Notes:
+      * For dense series we set x_padding = 1 for all context timesteps.
+      * If you pass multivariate X_full, the target is the last column by default;
+        otherwise we treat Y_full as the target series.
+    """
+    def __init__(
+        self,
+        series: torch.Tensor,        # shape (N,) or (N, F)
+        context_length: int,
+        horizon_length: int,
+        freq_type: int = 0,
+        target_col: int | None = None
+    ):
+        super().__init__()
+        if series.ndim == 1:
+            series = series[:, None]  # (N, 1)
+        self.X = series.float().contiguous()
+        self.N, self.F = self.X.shape
+        self.context_length = int(context_length)
+        self.horizon_length = int(horizon_length)
+        self.freq_type = int(freq_type)
+        self.target_col = self.F - 1 if target_col is None else int(target_col)
+        self.num_samples = max(0, self.N - self.context_length - self.horizon_length + 1)
+        if self.num_samples == 0:
+            raise ValueError(f"TimesFMSlidingWindowDataset: not enough length. N={self.N}, context={self.context_length}, horizon={self.horizon_length}")
+
+    def __len__(self):
+        return self.num_samples
+
+    def __getitem__(self, idx: int):
+        s = idx
+        e = idx + self.context_length
+        fh = e
+        ft = e + self.horizon_length
+        x_context = self.X[s:e]                                   # (context_length, F)
+        x_padding = torch.ones(self.context_length, dtype=torch.float32)  # no padding in dense series
+        freq = torch.tensor([self.freq_type], dtype=torch.long)    # shape (1,)
+        y_future = self.X[fh:ft, self.target_col:self.target_col+1]        # (horizon_length, 1)
+        return x_context, x_padding, freq, y_future
+
+@dataclass
+class TimesFMDataSpec:
+    batch_size: int = 32
+    val_frac: float = 0.15
+    num_workers: int = 0
+    drop_last: bool = False
+
+def build_timesfm_loaders_from_series(
+    series: torch.Tensor | Sequence[float] | Sequence[Sequence[float]],
+    context_length: int,
+    horizon_length: int,
+    freq_type: int = 0,
+    spec: TimesFMDataSpec = TimesFMDataSpec()
+) -> tuple[torch.utils.data.DataLoader, torch.utils.data.DataLoader]:
+    """
+    Create train/val DataLoaders for a single series (univariate or multivariate).
+    Ensures the validation split is done by *windows* (not by raw timesteps),
+    so we always have at least one validation batch when possible.
+    """
+    if not isinstance(series, torch.Tensor):
+        series = torch.tensor(series, dtype=torch.float32)
+    ds_all = TimesFMSlidingWindowDataset(series, context_length, horizon_length, freq_type)
+    n = len(ds_all)
+    if n == 0:
+        raise ValueError("No valid windows for TimesFM.")
+    n_val = max(1, int(math.ceil(n * spec.val_frac)))
+    n_train = max(1, n - n_val)
+    # Slice by window index
+    train_idx = list(range(0, n_train))
+    val_idx = list(range(n - n_val, n))
+    train_ds = torch.utils.data.Subset(ds_all, train_idx)
+    val_ds = torch.utils.data.Subset(ds_all, val_idx)
+    train_loader = torch.utils.data.DataLoader(
+        train_ds, batch_size=spec.batch_size, shuffle=True, drop_last=spec.drop_last,
+        num_workers=spec.num_workers, pin_memory=True
+    )
+    val_loader = torch.utils.data.DataLoader(
+        val_ds, batch_size=spec.batch_size, shuffle=False, drop_last=False,
+        num_workers=spec.num_workers, pin_memory=True
+    )
+    return train_loader, val_loader
+
+def collate_timesfm(batch):
+    """Optional explicit collate if you need to stack heterogeneous pieces."""
+    xs, pads, freqs, ys = zip(*batch)
+    return (
+        torch.stack(xs, dim=0),
+        torch.stack(pads, dim=0),
+        torch.stack(freqs, dim=0).squeeze(1),
+        torch.stack(ys, dim=0),
+    )

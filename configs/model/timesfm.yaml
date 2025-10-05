@@ -1,0 +1,21 @@
+model_type: TimesFM
+trainer_class: TimesFMTrainer
+params:
+  # Keep aliases to align with your existing config schema where possible
+  context_length: 512      # = input_len
+  horizon_length: 5      # = output_len (TimesFM forecast horizon)
+  input_len: 512
+  output_len: 5
+  freq_type: 0             # map your dataset frequency to {0,1,2}
+  batch_size: 32
+  epochs: 25
+  lr: 1e-4
+  weight_decay: 0.0
+  single_step_pred: false   # if true, trainer compares only the first horizon step
+  use_quantile_loss: false
+  model_name: google/timesfm-1.0-200m-pytorch
+  head_hidden: 64
+  head_dropout: 0.0 
+optimizer: Adam
+lr_policy: constant
+patience: 3

@@ -4,8 +4,8 @@ trainer_class: FEDTrainer
 params:
   input_len: 64 # Adjust based on your data
   input_size: 1672 
-  output_len: 1  
-  num_targets: 20 
+  output_len: 5     # lag=[1,2,3,4] so the maximum prediction lag = 4 + 1 = 5 
+  output_size: 424 # output_size = num_target
   hidden_size: 128  # d_model
   num_layers: 2
   batch_size: 32
@@ -16,6 +16,6 @@ params:
   dim_feedforward: 512  # Feed-forward dimension
 optimizer: Adam
 lr: 0.001
-epochs: 50
+epochs: 2  #50
 lr_policy: constant
 patience: 5

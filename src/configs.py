@@ -1,15 +1,21 @@
 from dataclasses import dataclass
 import torch 
+import os
+import yaml
+from itertools import product
+from typing import Optional 
 
 ############################
 # Classes: 
 ############################
-@dataclass
+
 # output_len = k for k-step ahead.
 # lag controls the offset between the date_id of the last input and date_id of the target
 # lag adjusts the input data window used for prediction, not the model's output structure. 
-
+@dataclass
 class TrainConfig:
+    optuna_trial: int = 0  # record optuna trial for logging 
+    model_type: str = 'please specify model_type'     # This will be fed through *.yaml file of each model. 
     input_len: int = 64  # feature timesteps for windows(len = timesteps) 
     input_size: int = 559  # size = number of columns 
     output_len: int = 1    # predicted timesteps in a single forward pass of model
@@ -24,7 +30,7 @@ class TrainConfig:
     num_layers: int = 2
     dropout: float = 0.1
     patience: int = 5
-    device: str = "cuda" if torch.cuda.is_available() else "cpu"
+    device: str = "cuda" if torch.cuda.is_available() else "cpu"  # Ensure device is always set
     optimizer: str = "AdamW"
     lr_policy: str = "constant"  # constant, clr, onecycle
     scheduler_patience: int = 5
@@ -38,27 +44,32 @@ class TrainConfig:
     top_k_modes: int = 5  # For FED
     nhead: int = 8  # For FED
     dim_feedforward: int = 512  # For FED
-
+    
+    
+@dataclass
+class SimpleCfg:
+    input_len: int
+    output_len: int
+    batch_size: int
+    horizon_len: int
+    single_step_pred: bool
+    freq_type: int
+    epochs: int
+    lr: float
+    weight_decay: float = 0.0
+    use_quantile_loss: bool = False
+    quantiles: Optional[list[float]] = None
+    num_workers: int = 2
+    device: str = "cuda" if torch.cuda.is_available() else "cpu"
 
 
 ############################
 # Functions:
 ############################
 # Generate .yaml files dynamically using Python (e.g., for hyperparameter sweeps or new models).
-import os
-import yaml
-from itertools import product
-
 def generate_model_configs(model_name: str, model_class: str, base_params: dict, sweep_params: dict, output_dir: str):
     """
     Generate YAML configs for a model with hyperparameter sweeps.
-    
-    Args:
-        model_name: Base name (e.g., 'FED_Forecaster').
-        model_class: Trainer class (e.g., 'FEDTrainer').
-        base_params: Base configuration dictionary.
-        sweep_params: Dict of params to sweep (e.g., {'hidden_size': [64, 128]}).
-        output_dir: Directory to save YAML files (e.g., 'configs/model/').
     """
     os.makedirs(output_dir, exist_ok=True)
     param_combinations = list(product(*[[(k, v) for v in values] for k, values in sweep_params.items()]))

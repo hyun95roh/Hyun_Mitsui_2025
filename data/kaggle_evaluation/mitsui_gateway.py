@@ -19,7 +19,7 @@ class MitsuiGateway(kaggle_evaluation.core.templates.Gateway):
 
     def unpack_data_paths(self):
         if not self.data_paths:
-            self.competition_data_dir = '/kaggle/input/mitsui-commodity-prediction-challenge/'
+            self.competition_data_dir = '/data/' #'/kaggle/input/mitsui-commodity-prediction-challenge/'
         else:
             self.competition_data_dir = self.data_paths[0]
         self.competition_data_dir = Path(self.competition_data_dir)

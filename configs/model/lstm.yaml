@@ -4,8 +4,8 @@ trainer_class: LSTMTrainer
 params:
   input_len: 64    # timestemps of features 
   input_size: 1672 # Number of features 
-  output_size: 1   # timestemps of targets
-  num_targets: 20  # Multitargets 
+  output_len: 5    # lag=[1,2,3,4] so the maximum prediction lag = 4 + 1 = 5    # timestemps of targets
+  output_size: 424 # output_size = num_target
   hidden_size: 50  # Will be overridden by Optuna
   num_layers: 2    # Will be overridden by Optuna
   batch_size: 32   # Will be overridden by Optuna

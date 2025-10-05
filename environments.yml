@@ -1,0 +1,65 @@
+name: mitsui
+#channel_priority: strict
+channels:
+  - pytorch
+  - nvidia
+  - conda-forge
+  - defaults
+
+dependencies:
+  # Python
+  - python=3.11
+
+  # Core build/runtime
+  - pip
+  - setuptools
+  - wheel
+
+  # PyTorch (GPU)
+  - pytorch
+  - torchvision
+  - torchaudio
+  - pytorch-cuda=12.1   # My cuda=12.0
+
+  # HPO
+  - optuna 
+  - omegaconf
+
+  # Numerics / data
+  - numpy
+  - pandas
+  - scipy
+  - scikit-learn
+  - polars
+  - xgboost
+
+  # Probabilistic / TS
+  - pymc
+  - pmdarima
+  - gluonts
+
+  # Viz / notebook UX (fixes Pillow/libtiff issues + tqdm widgets)
+  - matplotlib
+  - pillow
+  - ipykernel
+  - ipywidgets
+  - jupyterlab_widgets
+  # (libtiff + libjpeg come in via pillow on conda-forge)
+
+  # HF ecosystem
+  - transformers
+  - accelerate
+
+  # Utils
+  - tqdm
+  - kaggle
+  - joblib
+  - hydra-core
+
+  # Only pip-only packages go here
+  #- pip:
+  #    - timesfm 
+  #    - For finetuning...: 
+        # First, git clone https://github.com/google-research/timesfm.git 
+        # Next, go to the cloned repo: cd timesfm
+        # Lastly, pip install -e . 

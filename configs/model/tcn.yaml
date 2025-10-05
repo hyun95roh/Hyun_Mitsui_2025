@@ -4,8 +4,8 @@ trainer_class: TCNTrainer
 params:
   input_len: 64
   input_size: 1672
-  output_len: 1
-  num_targets: 20
+  output_len: 5     # lag=[1,2,3,4] so the maximum prediction lag = 4 + 1 = 5 
+  output_size: 424  # output_size = num_target
   hidden_size: 128
   num_layers: 2
   batch_size: 16

@@ -11,6 +11,7 @@ from sklearn.preprocessing import StandardScaler, MinMaxScaler
 from time import time 
 import matplotlib.pyplot as plt
 import yaml 
+import logging
 ######################
 # Submission  
 ######################
@@ -46,9 +47,80 @@ def log_returns(series:pd.Series, lag:int) -> pd.Series:
     s = series.astype(float)
     return np.log(s.shift(-(lag+1)) / s.shift(-1))
 
+######################
+# Ensemble predictions
+######################
+def weighted_ensemble(*predictions: np.ndarray, w: np.ndarray | float = None) -> np.ndarray:
+    """
+    Combine predictions from multiple models using weights.
+    
+    Args:
+        *predictions: Variable number of prediction arrays, each of shape (num_targets,) or (1, num_targets).
+        w: Weights for each model. Can be:
+           - float: Single weight applied to first model, rest split equally.
+           - np.ndarray: Array of shape (num_models,) for global weights or (num_targets, num_models) for per-target weights.
+           - None: Equal weights (1/num_models).
+    
+    Returns:
+        np.ndarray: Ensembled predictions of shape (num_targets,).
+    
+    Notes:
+        - num_targets must be 424 for Mitsui challenge.
+        - Predictions are clipped to finite values to avoid NaN/infinity issues.
+        - If weights are invalid, falls back to equal weighting.
+    """
+    num_targets = 424  # Hard-coded for Mitsui challenge
+    predictions = [np.asarray(p).reshape(-1) for p in predictions]  # Ensure 1D arrays
+    
+    # Validate predictions
+    for i, pred in enumerate(predictions):
+        if pred.shape != (num_targets,):
+            logging.error(f"Prediction {i} has shape {pred.shape}, expected ({num_targets},)")
+            raise ValueError(f"Prediction {i} has invalid shape {pred.shape}")
+        if not np.isfinite(pred).all():
+            logging.warning(f"Non-finite values in prediction {i}; replacing with zeros")
+            predictions[i] = np.nan_to_num(pred, nan=0.0, posinf=0.0, neginf=0.0)
 
+    num_models = len(predictions)
+    if num_models == 0:
+        logging.error("No predictions provided")
+        raise ValueError("At least one prediction array is required")
 
+    # Handle weights
+    if w is None:
+        w = np.ones(num_models) / num_models
+    elif isinstance(w, (int, float)):
+        if num_models > 1:
+            w = np.array([w] + [(1.0 - w) / (num_models - 1)] * (num_models - 1))
+        else:
+            w = np.array([1.0])
+    else:
+        w = np.asarray(w)
+        if w.shape == (num_models,):
+            pass  # Global weights
+        elif w.shape == (num_targets, num_models):
+            pass  # Per-target weights
+        else:
+            logging.warning(f"Invalid weight shape {w.shape}; using equal weights")
+            w = np.ones(num_models) / num_models
 
+    # Normalize weights
+    if w.ndim == 1:
+        w = w / np.sum(w)
+        # Combine predictions: (num_targets,) = sum(w[i] * pred[i])
+        final_pred = np.sum([w[i] * pred for i, pred in enumerate(predictions)], axis=0)
+    else:
+        w = w / np.sum(w, axis=1, keepdims=True)
+        # Per-target weighting: (num_targets,) = sum(w[:,i] * pred[i])
+        final_pred = np.sum([w[:, i:i+1] * pred for i, pred in enumerate(predictions)], axis=0)
+
+    # Ensure finite output
+    if not np.isfinite(final_pred).all():
+        logging.warning("Non-finite values in final ensemble; replacing with zeros")
+        final_pred = np.nan_to_num(final_pred, nan=0.0, posinf=0.0, neginf=0.0)
+
+    logging.info(f"Ensembling {num_models} models with weights {w[:5] if w.ndim == 1 else w.shape}; output shape {final_pred.shape}")
+    return final_pred
 
 
 

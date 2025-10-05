@@ -1,22 +1,23 @@
 experiment:
   data_path: "../data"
   checkpoint_dir: "../checkpoints"
-  models: ["lstm", "cnnlstm", "tcn", "fed", "transformer"]
+  models: ["fed"] # *.yaml files;  "timesfm","lstm", "cnnlstm", "tstp"
   row_fraction: 1.0  # 1.0 = Use 100% of data
   num_targets: 424   # Full target set
   filter_features: false
   optuna:
     direction: "minimize"
-    n_trials: 100    # Increased for thorough search
+    n_trials: 2 #50    # Increased for thorough search
     n_jobs: 2        # Parallel jobs (adjust based on hardware)
 model:
-  model_name: "default"
+  model_type: "default"
   model_class: "default"
+  trainer_class: "default"
   params:
     input_size: 1672
-    output_size: 424
+    output_size: 424  # num_target = output_size 
     input_len: 64
-    output_len: 1
+    output_len: 5     # lag=[1,2,3,4] so the maximum prediction lag = 4 + 1 = 5 
     batch_size: 16
     hidden_size: 128
     num_layers: 2
@@ -32,6 +33,11 @@ model:
     top_k_modes: 5
     nhead: 8
     dim_feedforward: 512
+    weight_decay: 1e-3
+    scheduler_patience: 5
+    scheduler_factor: 0.5
+    clip_grad_norm: 1.0
+    partially_finite_target: false
   lr: 0.001
   optimizer: "Adam"
   lr_policy: "constant"
