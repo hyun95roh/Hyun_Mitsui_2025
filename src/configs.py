@@ -17,8 +17,8 @@ class TrainConfig:
     optuna_trial: int = 0  # record optuna trial for logging 
     model_type: str = 'please specify model_type'     # This will be fed through *.yaml file of each model. 
     input_len: int = 64  # feature timesteps for windows(len = timesteps) 
-    input_size: int = 559  # size = number of columns 
-    output_len: int = 1    # predicted timesteps in a single forward pass of model
+    input_size: int = 1672  # size = number of columns 
+    output_len: int = 5    # predicted timesteps in a single forward pass of model
     output_size: int = 424 # number of targets 
     batch_size: int = 64
     epochs: int = 25
@@ -42,8 +42,13 @@ class TrainConfig:
     tcn_kernel: int = 3  # For TCN
     decom_kernel_size: int = 25  # For FED
     top_k_modes: int = 5  # For FED
-    nhead: int = 8  # For FED
-    dim_feedforward: int = 512  # For FED
+    nhead: int = 8  # For FED and Informer
+    dim_feedforward: int = 512  # For FED and Informer
+    label_len: int = 32  # For Informer
+    attn: str = 'prob'  # For Informer
+    distil: bool = True  # For Informer
+    #mix: bool = True  # For Informer
+    d_layers: int = 2  # For Informer (number of decoder layers)
     
     
 @dataclass
@@ -90,8 +95,8 @@ def generate_model_configs(model_name: str, model_class: str, base_params: dict,
 if __name__ == "__main__":
     base_params = {
         'params': {
-            'input_size': 10,
-            'output_size': 1,
+            'input_size': 559,
+            'output_size': 5,
             'batch_size': 32,
             'dropout': 0.1,
             'num_layers': 2,

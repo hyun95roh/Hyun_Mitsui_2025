@@ -168,8 +168,26 @@ def validate_all_configs(config_dir: str):
 
 
 ######################
-# MSE
+# loss functions
 ######################
+import torch
+import torch.nn.functional as F
+
+def mae_loss(pred, target):
+    return F.l1_loss(pred, target)
+
+def pinball_loss(pred, target, q=0.5):
+    e = target - pred
+    return torch.maximum(q*e, (q-1)*e).mean()
+
+def multi_quantile_loss(q_preds, target, quantiles=(0.1, 0.5, 0.9)):
+    # q_preds: list of tensors [B,H,D] for each quantile
+    loss = 0.0
+    for p, q in zip(q_preds, quantiles):
+        loss = loss + pinball_loss(p, target, q)
+    return loss / len(quantiles)
+
+
 def masked_mse(y_true, y_pred):
     m = np.isfinite(y_true) & np.isfinite(y_pred)
     return float(np.mean((y_true[m]-y_pred[m])**2)) if m.any() else np.nan

@@ -1,3 +1,4 @@
+# dataprep.py
 # From sibiling module
 from configs import TrainConfig
 from utils import log_returns
@@ -511,7 +512,8 @@ class dataprep:
                 'TCNTrainer': 'TCN',
                 'FEDTrainer': 'FED',
                 'TSTPTrainer': 'TSTP',
-                'TimesFMTrainer': 'TimesFM'
+                'TimesFMTrainer': 'TimesFM',
+                'InTrainer':'INF',
             }
             model_name = model_name_map.get(getattr(cfg, 'model_class', 'default'), 'default')
             logging.info(f"model_name not provided in cfg; inferred as {model_name} from model_class")
@@ -549,6 +551,8 @@ class dataprep:
             
             logging.info(f"GluonTS datasets created: train={len(train_dataset)}, val={len(val_dataset)}, test={len(test_dataset)}")
             return train_dataset, val_dataset, test_dataset
+        
+
         else:
             try:
                 dataset = WindowDataset(X, Y, cfg.input_len, cfg.output_len)
@@ -560,26 +564,26 @@ class dataprep:
 
             dataset = TensorDataset(
                 torch.tensor(Xw, dtype=torch.float32),
-                torch.tensor(Yw, dtype=torch.float32)
+                torch.tensor(Yw, dtype=torch.float32),
             )
+        # Split train/val/test 
+        N = len(dataset)
+        n_val = max(1, int(0.15 * N))
+        n_test = max(1, int(0.1 * N))
+        n_train = N - n_val - n_test
 
-            N = len(dataset)
-            n_val = max(1, int(0.15 * N))
-            n_test = max(1, int(0.1 * N))
-            n_train = N - n_val - n_test
+        if n_train < 1:
+            raise ValueError(f"Insufficient training samples after split: {n_train}")
 
-            if n_train < 1:
-                raise ValueError(f"Insufficient training samples after split: {n_train}")
+        train_dataset, val_dataset, test_dataset = torch.utils.data.random_split(
+            dataset, [n_train, n_val, n_test], generator=torch.Generator().manual_seed(42)
+        )
 
-            train_dataset, val_dataset, test_dataset = torch.utils.data.random_split(
-                dataset, [n_train, n_val, n_test], generator=torch.Generator().manual_seed(42)
-            )
+        train_loader = DataLoader(train_dataset, batch_size=cfg.batch_size, shuffle=True)
+        val_loader = DataLoader(val_dataset, batch_size=cfg.batch_size, shuffle=False)
+        test_loader = DataLoader(test_dataset, batch_size=cfg.batch_size, shuffle=False)
 
-            train_loader = DataLoader(train_dataset, batch_size=cfg.batch_size, shuffle=True)
-            val_loader = DataLoader(val_dataset, batch_size=cfg.batch_size, shuffle=False)
-            test_loader = DataLoader(test_dataset, batch_size=cfg.batch_size, shuffle=False)
-
-            return train_loader, val_loader, test_loader
+        return train_loader, val_loader, test_loader
 
 
 # =======================================================================
@@ -690,3 +694,211 @@ def collate_timesfm(batch):
         torch.stack(freqs, dim=0).squeeze(1),
         torch.stack(ys, dim=0),
     )
+
+
+#######################
+# Informer 
+#######################
+
+class InformerWindowDataset(WindowDataset):
+    """
+    Derivative of WindowDataset for Informer-specific preparation.
+    Outputs: (x_enc, x_dec, x_mark_enc, x_mark_dec, y) if use_time_feats, else (x_enc, x_dec, y)
+    """
+    def __init__(self, X_full: Optional[np.ndarray], Y_full: np.ndarray, input_len: int = 64, output_len: int = 1, 
+                 label_len: int = 32, use_time_feats: bool = False, start_date: pd.Timestamp = None, d_model: int = 512):
+        super().__init__(X_full, Y_full, input_len, output_len)
+        self.label_len = label_len
+        self.use_time_feats = use_time_feats
+        self.start_date = start_date or pd.Timestamp("2020-01-01")
+        self.d_model = d_model  # To align time features with model
+        self.x_dec = []
+        self.mark_enc = []
+        self.mark_dec = []
+
+        N = len(Y_full)
+        invalid_windows = 0
+        for i in range(N - input_len - output_len + 1):
+            dec_start = i + input_len - label_len
+            x_dec_w = np.zeros((label_len + output_len, Y_full.shape[1]), dtype=np.float32)
+            if dec_start < 0:
+                dec_known = Y_full[max(0, dec_start): i + input_len]
+                x_dec_w[label_len - len(dec_known):label_len] = dec_known
+            else:
+                x_dec_w[:label_len] = Y_full[dec_start: dec_start + label_len]
+            self.x_dec.append(x_dec_w)
+
+            if use_time_feats:
+                enc_dates = pd.date_range(start=self.start_date + pd.Timedelta(days=i), 
+                                        periods=input_len, freq='D')
+                dec_dates = pd.date_range(start=self.start_date + pd.Timedelta(days=i + input_len - label_len), 
+                                        periods=label_len + output_len, freq='D')
+                time_features = time_features_from_frequency_str('D')
+                mark_enc = np.array([f(d) for d in enc_dates for f in time_features]).reshape(input_len, -1)
+                mark_dec = np.array([f(d) for d in dec_dates for f in time_features]).reshape(label_len + output_len, -1)
+                # Pad time features to match d_model
+                n_time_feats = mark_enc.shape[-1]
+                if n_time_feats < self.d_model:
+                    mark_enc = np.pad(mark_enc, ((0, 0), (0, self.d_model - n_time_feats)), mode='constant')
+                    mark_dec = np.pad(mark_dec, ((0, 0), (0, self.d_model - n_time_feats)), mode='constant')
+                self.mark_enc.append(mark_enc)
+                self.mark_dec.append(mark_dec)
+
+            if not (np.all(np.isfinite(self.x[i])) and np.all(np.isfinite(x_dec_w)) and np.all(np.isfinite(self.y[i]))):
+                invalid_windows += 1
+                continue
+
+        self.x_dec = np.asarray(self.x_dec, dtype=np.float32)
+        if use_time_feats:
+            self.mark_enc = np.asarray(self.mark_enc, dtype=np.float32)
+            self.mark_dec = np.asarray(self.mark_dec, dtype=np.float32)
+        else:
+            self.mark_enc = None
+            self.mark_dec = None
+
+        logging.info(f"InformerWindowDataset created: Xw shape={self.x.shape}, x_dec shape={self.x_dec.shape}, "
+                     f"Yw shape={self.y.shape}, mark_enc shape={self.mark_enc.shape if use_time_feats else None}, "
+                     f"invalid_windows={invalid_windows}")
+
+    def __getitem__(self, idx):
+        if self.use_time_feats:
+            return self.x[idx], self.x_dec[idx], self.mark_enc[idx], self.mark_dec[idx], self.y[idx]
+        return self.x[idx], self.x_dec[idx], self.y[idx]
+
+def build_informer_datasets(cfg: TrainConfig, X: np.ndarray, Y: np.ndarray, use_time_feats: bool = False) -> tuple[DataLoader, DataLoader, DataLoader]:
+    logging.info(f"Building Informer datasets with input_len={cfg.input_len}, output_len={cfg.output_len}, "
+                 f"label_len={cfg.label_len}, use_time_feats={use_time_feats}")
+    
+    if X.ndim != 2 or Y.ndim != 2:
+        raise ValueError(f"Expected X (N, F) and Y (N, T), got shapes {X.shape}, {Y.shape}")
+    if X.shape[1] != cfg.input_size or Y.shape[1] != cfg.output_size:
+        raise ValueError(f"Expected X feature dim {cfg.input_size}, Y target dim {cfg.output_size}, got {X.shape[1]}, {Y.shape[1]}")
+
+    try:
+        dataset = InformerWindowDataset(
+            X_full=X,
+            Y_full=Y,
+            input_len=cfg.input_len,
+            output_len=cfg.output_len,
+            label_len=cfg.label_len,
+            use_time_feats=use_time_feats,
+            start_date=pd.Timestamp("2020-01-01"),
+            d_model=cfg.hidden_size
+        )
+        logging.info(f"Informer dataset created: X_enc shape={dataset.x.shape}, x_dec shape={dataset.x_dec.shape}, "
+                     f"Y shape={dataset.y.shape}, mark_enc shape={dataset.mark_enc.shape if use_time_feats else None}")
+    except Exception as e:
+        logging.error(f"InformerWindowDataset creation failed: {str(e)}")
+        raise
+
+    N = len(dataset)
+    n_val = max(1, int(0.15 * N))
+    n_test = max(1, int(0.1 * N))
+    n_train = N - n_val - n_test
+    if n_train < 1:
+        raise ValueError(f"Insufficient training samples after split: {n_train}")
+
+    tensors = (
+        (torch.tensor(dataset.x, dtype=torch.float32),
+         torch.tensor(dataset.x_dec, dtype=torch.float32),
+         torch.tensor(dataset.mark_enc, dtype=torch.float32),
+         torch.tensor(dataset.mark_dec, dtype=torch.float32),
+         torch.tensor(dataset.y, dtype=torch.float32))
+        if use_time_feats else
+        (torch.tensor(dataset.x, dtype=torch.float32),
+         torch.tensor(dataset.x_dec, dtype=torch.float32),
+         torch.tensor(dataset.y, dtype=torch.float32))
+    )
+    dataset = TensorDataset(*tensors)
+
+    train_dataset, val_dataset, test_dataset = torch.utils.data.random_split(
+        dataset, [n_train, n_val, n_test], generator=torch.Generator().manual_seed(42)
+    )
+
+    train_loader = DataLoader(
+        train_dataset,
+        batch_size=cfg.batch_size,
+        shuffle=True,
+        drop_last=False,
+        num_workers=cfg.num_workers if hasattr(cfg, 'num_workers') else 0,
+        pin_memory=True
+    )
+    val_loader = DataLoader(
+        val_dataset,
+        batch_size=cfg.batch_size,
+        shuffle=False,
+        num_workers=cfg.num_workers if hasattr(cfg, 'num_workers') else 0,
+        pin_memory=True
+    )
+    test_loader = DataLoader(
+        test_dataset,
+        batch_size=cfg.batch_size,
+        shuffle=False,
+        num_workers=cfg.num_workers if hasattr(cfg, 'num_workers') else 0,
+        pin_memory=True
+    )
+
+    logging.info(f"Informer DataLoaders created: train={len(train_dataset)}, val={len(val_dataset)}, test={len(test_dataset)}")
+    return train_loader, val_loader, test_loader
+
+def collate_informer(batch):
+    x_enc      = torch.stack([b["x_enc"] for b in batch])          # (B, L_enc, D_in)
+    x_mark_enc = torch.stack([b["x_mark_enc"] for b in batch])      # (B, L_enc, D_mark)
+    x_dec      = torch.stack([b["x_dec"] for b in batch])           # (B, L_dec, C)
+    x_mark_dec = torch.stack([b["x_mark_dec"] for b in batch])      # (B, L_dec, D_mark)
+    y          = torch.stack([b["y"] for b in batch])               # (B, T, C)  <<< ensure each item['y'] is (T,C)
+    return x_enc, x_mark_enc, x_dec, x_mark_dec, y
+
+
+###################
+# DERITS 
+###################
+class MultiAssetPriceDataset(Dataset):
+    """
+    Produces sliding windows for multi-asset forecasting.
+    Expects a dict with arrays: 
+      data["X"]: np.ndarray [T, C_in]  (first D columns are target series)
+      data["Y"]: np.ndarray [T, D]     (optional; if not provided we derive from X[:, :D])
+    You can feed raw log-prices and set use_returns=True to create log-returns.
+    """
+    def __init__(self, data, L: int, H: int, use_returns: bool = True, targets_are_levels: bool = False):
+        X = data["X"].astype(np.float32)  # [T, C_in]
+        self.X = X
+        self.T, self.C_in = X.shape
+        self.L = L
+        self.H = H
+
+        # Targets
+        if "Y" in data:
+            Y = data["Y"].astype(np.float32)  # [T, D]
+        else:
+            D = data.get("D", None)
+            if D is None:
+                raise ValueError("Provide data['D'] or data['Y']")
+            Y = X[:, :D]
+
+        if use_returns:
+            # log-returns for both inputs' target channels and Y
+            X_targets = X[:, :Y.shape[1]]
+            X[:, :Y.shape[1]] = np.diff(np.log(np.clip(X_targets, 1e-8, None)), prepend=X_targets[0:1]).astype(np.float32)
+            Y = np.diff(np.log(np.clip(Y, 1e-8, None)), prepend=Y[0:1]).astype(np.float32)
+
+        self.Y = Y
+        self.D = Y.shape[1]
+        self.targets_are_levels = targets_are_levels
+
+        self.max_start = self.T - (L + H)  # inclusive start idx range
+
+    def __len__(self):
+        return max(0, self.max_start + 1)
+
+    def __getitem__(self, idx):
+        s = idx
+        e = idx + self.L
+        h = e + self.H
+        x = self.X[s:e]         # [L, C_in]
+        y = self.Y[e:h, :self.D]  # [H, D]
+        return {
+            "x": torch.from_numpy(x),         # (L, C_in)
+            "y": torch.from_numpy(y),         # (H, D)
+        }

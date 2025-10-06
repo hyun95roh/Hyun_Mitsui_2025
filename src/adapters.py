@@ -1,3 +1,4 @@
+# adapters.py 
 import pandas as pd 
 import numpy as np 
 import warnings 
@@ -390,3 +391,133 @@ class TimesFMAdapter:
             logging.error(f"TimesFMAdapter predict_next failed: {str(e)}\n{traceback.format_exc()}")
             return np.zeros(424, dtype=float), {"date_id": date_id, "target_date_id": None, "lag": lag}
 
+
+
+class InAdapter:
+    def __init__(self, model, x_scaler=None, target_cols: List[str]=None):
+        self.model = model.eval()
+        self.x_scaler = x_scaler if x_scaler is not None else _IdentityScaler2D()
+        self.target_cols = target_cols
+        self.label_len = model.label_len
+        self.pred_len = model.pred_len
+        logging.info(f"InAdapter initialized with target_cols: {target_cols}, pred_len={self.pred_len}")
+
+    def predict_next(self, X_hist: pd.DataFrame, Y_hist: Optional[pd.DataFrame], input_len: int, lag: int = 1, use_time_feats: bool = False) -> tuple[np.ndarray, dict]:
+        if len(self.target_cols) != self.model.num_targets:
+            raise ValueError(f"Target columns mismatch in InForecaster: expected {self.model.num_targets}, got {len(self.target_cols)}")
+        try:
+            date_id = X_hist['date_id'].iloc[-1] if 'date_id' in X_hist.columns else None
+            X_full = X_hist.drop(columns=['date_id'], errors='ignore').to_numpy(dtype=float)
+            if len(X_full) < input_len:
+                logging.warning(f"Insufficient history: {len(X_full)} < {input_len}")
+                return np.full((self.model.num_targets,), np.nan), {"date_id": date_id, "target_date_id": None}
+
+            Xw = X_full[-input_len:]
+            if self.x_scaler:
+                Xw = self.x_scaler.transform(Xw)
+            
+            label_len = self.label_len
+            dec_len = label_len + self.pred_len
+            x_dec = np.zeros((1, dec_len, len(self.target_cols)), dtype=np.float32)  # Match dec_in=output_size
+            if Y_hist is not None and not Y_hist.empty:
+                Yw = Y_hist[self.target_cols].to_numpy(dtype=float)[-label_len:]
+                if len(Yw) == label_len:
+                    x_dec[0, :label_len, :] = Yw
+
+            device = next(self.model.parameters()).device
+            x_enc = torch.tensor(Xw, dtype=torch.float32, device=device).unsqueeze(0)
+            x_dec = torch.tensor(x_dec, dtype=torch.float32, device=device)
+
+            x_mark_enc, x_mark_dec = None, None
+            if use_time_feats:
+                start_date = pd.Timestamp("2020-01-01")
+                enc_dates = pd.date_range(start=start_date + pd.Timedelta(days=len(X_full) - input_len), 
+                                        periods=input_len, freq='D')
+                dec_dates = pd.date_range(start=start_date + pd.Timedelta(days=len(X_full) - label_len), 
+                                        periods=label_len + self.pred_len, freq='D')
+                time_features = time_features_from_frequency_str('D')
+                x_mark_enc = np.array([f(d) for d in enc_dates for f in time_features]).reshape(1, input_len, -1)
+                x_mark_dec = np.array([f(d) for d in dec_dates for f in time_features]).reshape(1, dec_len, -1)
+                # Pad time features to match d_model
+                d_model = self.model.enc_embedding.value_embedding.out_features
+                n_time_feats = x_mark_enc.shape[-1]
+                if n_time_feats < d_model:
+                    x_mark_enc = np.pad(x_mark_enc, ((0, 0), (0, 0), (0, d_model - n_time_feats)), mode='constant')
+                    x_mark_dec = np.pad(x_mark_dec, ((0, 0), (0, 0), (0, d_model - n_time_feats)), mode='constant')
+                x_mark_enc = torch.tensor(x_mark_enc, dtype=torch.float32, device=device)
+                x_mark_dec = torch.tensor(x_mark_dec, dtype=torch.float32, device=device)
+
+            with torch.no_grad():
+                out = self.model(x_enc, x_mark_enc=x_mark_enc, x_dec=x_dec, x_mark_dec=x_mark_dec).cpu().numpy()
+            
+            pred = out[0, lag-1, :] if lag <= self.pred_len else out[0, -1, :]  # Select lag
+            target_date_id = date_id + lag + 1 if date_id is not None else None
+            metadata = {"date_id": date_id, "target_date_id": target_date_id, "lag": lag}
+            return pred, metadata
+        except Exception as e:
+            logging.error(f"InAdapter predict_next failed: {str(e)}")
+            raise
+
+
+
+@dataclass
+class DeRiTSConfig:
+    L: int = 256
+    H: int = 16
+    C_in: int = 32   # first D are targets; remaining are exogenous
+    D: int = 8       # number of target series
+    orders: tuple = (0,1,2)
+    depth: int = 2
+    kernel_size: int = 5
+    dropout: float = 0.1
+    batch_size: int = 64
+    num_workers: int = 4
+    lr: float = 2e-4
+    wd: float = 1e-4
+    amp: bool = True
+    checkpoint_path: str = "checkpoints/derits_best.pt"
+
+class DERITSAdapter:
+    """
+    Inference adapter for DERITS.
+    Expects a model with:
+      - model.model_type == 'DERITS'
+      - model.num_targets == len(target_cols)
+    """
+    def __init__(self, model, x_scaler=None, target_cols=None):
+        self.model = model.eval()
+        self.x_scaler = x_scaler if x_scaler is not None else _IdentityScaler2D()
+        self.target_cols = list(target_cols) if target_cols is not None else None
+        logging.info(f"DERITSAdapter -> targets: {self.target_cols}")
+
+    def predict_next(self, X_hist: pd.DataFrame, Y_hist: Optional[pd.DataFrame],
+                     input_len: int, lag: int = 1):
+        if self.target_cols is None:
+            raise ValueError("DERITSAdapter requires target_cols.")
+        if getattr(self.model, "num_targets", None) != len(self.target_cols):
+            raise ValueError(f"DERITSAdapter: target size mismatch. Model {getattr(self.model, 'num_targets', None)} vs {len(self.target_cols)}")
+
+        cols_to_use = [c for c in X_hist.columns if c != 'date_id']
+        X_full = X_hist[cols_to_use].to_numpy(dtype=float)
+        date_id = X_hist['date_id'].iloc[-1] if 'date_id' in X_hist.columns else None
+
+        # left-pad if history is short
+        if X_full.shape[0] < input_len:
+            pad = input_len - X_full.shape[0]
+            if X_full.shape[0] == 0:
+                return np.zeros(len(self.target_cols), dtype=float), {"date_id": date_id, "target_date_id": None, "lag": lag}
+            X_full = np.vstack([X_full[0:1, :].repeat(pad, axis=0), X_full])
+
+        Y_dummy = np.empty((len(X_full), 1), dtype=np.float32)  # not used; do_predict signature
+        pred, meta = do_predict(
+            model=self.model,
+            X_scaler=self.x_scaler,
+            Y_hist=Y_dummy,
+            input_len=input_len,
+            X_hist=X_full,
+            date_id=date_id,
+            lag=lag
+        )
+        meta['lag'] = lag
+        meta['target_date_id'] = (date_id + lag + 1) if date_id is not None else None
+        return pred, meta

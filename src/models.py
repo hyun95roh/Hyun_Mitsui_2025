@@ -1,7 +1,10 @@
+# models.py
 import pandas as pd 
 import numpy as np 
 import torch.nn as nn 
+import torch.nn.functional as F
 from torch.nn.utils import weight_norm 
+from math import sqrt 
 import torch 
 import warnings 
 import pmdarima as pm 
@@ -1068,15 +1071,6 @@ def build_fed(cfg, num_features, num_targets):
     return model, x_scaler
 
 
-# Update MODEL_CLASSES
-MODEL_CLASSES = {
-    'LSTMForecaster': LSTMForecaster,
-    'CNNLSTMForecaster': CNNLSTMForecaster,
-    'TCNForecaster': TCNForecaster,
-    'FEDForecaster': FEDForecaster  # Add FEDForecaster
-}
-
-
 
 # =======================================================================
 # TimesFM additions (model loader / wrapper)
@@ -1235,3 +1229,582 @@ class TimesFMHeadWrapper(nn.Module):
 
 def make_timesfm_head(horizon_len: int, hidden: int = 64, dropout: float = 0.0):
     return TimesFMPerTargetHead(horizon_len, hidden, dropout)
+
+
+
+####################################
+# Informer 
+####################################
+class ProbSparseAttention(nn.Module):
+    def __init__(self, mask_flag=True, factor=10, scale=None, attention_dropout=0.1, output_attention=False):
+        super(ProbSparseAttention, self).__init__()
+        self.factor = factor
+        self.scale = scale
+        self.mask_flag = mask_flag
+        self.output_attention = output_attention
+        self.dropout = nn.Dropout(attention_dropout)
+
+    def _prob_QK(self, Q, K, sample_k, n_top):
+        B, H, L_Q, E = Q.shape
+        _, _, L_K, _ = K.shape
+        device = Q.device  # <<< add
+
+        # sample_k indices in [0, min(L_Q, L_K))
+        index_sample = torch.randint(
+            low=0, high=min(L_Q, L_K),
+            size=(L_Q, sample_k),
+            device=device, dtype=torch.long,  # <<< add device & dtype
+        )
+
+        K_expand = K.unsqueeze(-3).expand(B, H, L_Q, L_K, E)
+        # arange must be on device and long
+        arange_LQ = torch.arange(L_Q, device=device, dtype=torch.long).unsqueeze(1)  # <<< add
+
+        K_sample = K_expand[:, :, arange_LQ, index_sample, :]
+        Q_K_sample = torch.matmul(Q.unsqueeze(-2), K_sample.transpose(-2, -1)).squeeze(-2)
+
+        M = Q_K_sample.max(-1)[0] - torch.div(Q_K_sample.sum(-1), L_K)
+        # topk indices already on device, but make dtype explicit
+        M_top = M.topk(n_top, sorted=False)[1].to(dtype=torch.long)
+
+        # build batch/head indexers on the right device
+        b_idx = torch.arange(B, device=device, dtype=torch.long)[:, None, None]
+        h_idx = torch.arange(H, device=device, dtype=torch.long)[None, :, None]
+
+        Q_reduce = Q[b_idx, h_idx, M_top, :]
+        Q_K = torch.matmul(Q_reduce, K.transpose(-2, -1))
+        return Q_K, M_top
+
+
+    def _get_initial_context(self, V, L_Q):
+        B, H, L_V, D = V.shape
+        logging.debug(f"_get_initial_context: V shape={V.shape}, L_Q={L_Q}")
+        if not self.mask_flag:
+            V_sum = V.mean(dim=-2)
+            contex = V_sum.unsqueeze(-2).expand(B, H, L_Q, D).contiguous()
+        else:
+            if L_Q != L_V:
+                logging.warning(f"Sequence length mismatch: L_Q={L_Q}, L_V={L_V}. Adjusting L_V to L_Q.")
+                if L_V < L_Q:
+                    V = F.pad(V, (0, 0, 0, L_Q - L_V))
+                elif L_V > L_Q:
+                    V = V[:, :, :L_Q, :]
+                L_V = L_Q
+            contex = V.cumsum(dim=-2).contiguous()
+        return contex
+
+    def _update_context(self, context_in, V, scores, index, L_Q, attn_mask):
+        B, H, L_V, D = V.shape
+        device = context_in.device  # <<< add
+        index = index.to(device=device, dtype=torch.long)  # <<< add
+
+        if self.mask_flag:
+            reduced_L_Q = scores.shape[2]
+            attn_mask = TriangularCausalMask(B, reduced_L_Q, device=device)
+            scores.masked_fill_(attn_mask.mask, -np.inf)
+
+        attn = torch.softmax(scores, dim=-1)
+
+        # Use actual length of context slot we're writing into
+        L_slot = context_in.shape[2]                     # <<< add
+        if torch.any(index >= L_slot) or torch.any(index < 0):
+            # If this ever hits, something upstream is off; clamp as last resort
+            index = index.clamp_(0, L_slot - 1)          # <<< add
+
+        b_idx = torch.arange(B, device=device, dtype=torch.long)[:, None, None]   # <<< add
+        h_idx = torch.arange(H, device=device, dtype=torch.long)[None, :, None]   # <<< add
+
+        context_in[b_idx, h_idx, index, :] = torch.matmul(attn, V).type_as(context_in)
+
+        if self.output_attention:
+            attns = (torch.ones([B, H, L_slot, L_slot], device=device) / L_slot).type_as(attn)
+            attns[b_idx, h_idx, index, :] = attn
+            return (context_in.contiguous(), attns)
+        return (context_in.contiguous(), None)
+
+
+    def forward(self, queries, keys, values, attn_mask):
+        B, L_Q, H, D = queries.shape
+        _, L_K, _, _ = keys.shape
+        logging.debug(f"ProbSparseAttention forward: queries={queries.shape}, keys={keys.shape}, values={values.shape}")
+        queries = queries.transpose(2, 1).contiguous()
+        keys = keys.transpose(2, 1).contiguous()
+        values = values.transpose(2, 1).contiguous()
+        U_part = self.factor * np.ceil(np.log(min(L_Q, L_K))).astype('int').item()
+        u = self.factor * np.ceil(np.log(L_Q)).astype('int').item()
+        U_part = min(U_part, L_K)
+        u = min(u, L_Q)
+        logging.debug(f"U_part={U_part}, u={u}")
+        scores_top, index = self._prob_QK(queries, keys, sample_k=U_part, n_top=u)
+        scale = self.scale or 1. / sqrt(D)
+        if scale is not None:
+            scores_top = scores_top * scale
+        context = self._get_initial_context(values, u)
+        context, attn = self._update_context(context, values, scores_top, index, u, attn_mask)
+        return context.contiguous().transpose(2, 1), attn
+
+class AttentionLayer(nn.Module):
+    def __init__(self, attention, d_model, n_heads,
+                 d_keys=None, d_values=None, mix=False, dropout=0.1):
+        super().__init__()
+        self.attention = attention
+        self.n_heads = n_heads
+        self.d_model = d_model
+        self.mix = mix 
+
+        # If not provided, default to d_model // n_heads (Informer convention)
+        self.d_k = d_keys if d_keys is not None else d_model // n_heads
+        self.d_v = d_values if d_values is not None else d_model // n_heads
+
+        # Project into head spaces
+        self.query_projection = nn.Linear(d_model, n_heads * self.d_k)
+        self.key_projection   = nn.Linear(d_model, n_heads * self.d_k)
+        self.value_projection = nn.Linear(d_model, n_heads * self.d_v)
+
+        # IMPORTANT: in_features must be H * d_v (NOT hard-coded d_model)
+        self.out_projection = nn.Linear(self.n_heads * self.d_v, self.d_model)
+
+        self.dropout = nn.Dropout(dropout)
+        logging.debug(f"AttentionLayer initialized: d_model={d_model}, n_heads={n_heads}, d_keys={d_keys}, d_values={d_values}")
+
+    def forward(self, queries, keys, values, attn_mask=None):
+        B, L_q, _ = queries.shape
+        B, L_k, _ = keys.shape
+        B, L_v, _ = values.shape
+
+        # project
+        Q = self.query_projection(queries)  # (B, L_q, H*d_k)
+        K = self.key_projection(keys)       # (B, L_k, H*d_k)
+        V = self.value_projection(values)   # (B, L_v, H*d_v)
+
+        # reshape to (B, L, H, d)
+        Q = Q.view(B, L_q, self.n_heads, self.d_k)
+        K = K.view(B, L_k, self.n_heads, self.d_k)
+        V = V.view(B, L_v, self.n_heads, self.d_v)
+
+        # route by attention kind
+        if getattr(self.attention, "input_layout", None) == "blhe":
+            # FullAttention path – already (B, L, H, d)
+            out, attn = self.attention(Q, K, V, attn_mask=attn_mask)  # context: (B,L_q,H,d_v)
+            # concat heads -> (B, L_q, H*d_v)
+            out = out.contiguous().view(B, L_q, self.n_heads * self.d_v)
+
+        else:
+            # ProbSparse (expects (B, H, L, d))
+            Q = Q.permute(0, 2, 1, 3).contiguous()  # (B,H,L_q,d_k)
+            K = K.permute(0, 2, 1, 3).contiguous()  # (B,H,L_k,d_k)
+            V = V.permute(0, 2, 1, 3).contiguous()  # (B,H,L_v,d_v)
+            out, attn = self.attention(Q, K, V, attn_mask=attn_mask)   # (B,H,L_q,d_v)
+            out = out.permute(0, 2, 1, 3).contiguous().view(B, L_q, self.n_heads * self.d_v)
+
+        return self.out_projection(out), attn
+
+class EncoderLayer(nn.Module):
+    def __init__(self, attention, d_model, d_ff=None, dropout=0.1, activation="relu"):
+        super(EncoderLayer, self).__init__()
+        d_ff = d_ff or 4 * d_model
+        self.attention = attention
+        self.conv1 = nn.Conv1d(in_channels=d_model, out_channels=d_ff, kernel_size=1)
+        self.conv2 = nn.Conv1d(in_channels=d_ff, out_channels=d_model, kernel_size=1)
+        self.norm1 = nn.LayerNorm(d_model)
+        self.norm2 = nn.LayerNorm(d_model)
+        self.dropout = nn.Dropout(dropout)
+        self.activation = F.relu if activation == "relu" else F.gelu
+
+    def forward(self, x, attn_mask=None):
+        new_x, attn = self.attention(x, x, x, attn_mask=attn_mask)
+        x = x + self.dropout(new_x)
+        y = x = self.norm1(x)
+        y = self.dropout(self.activation(self.conv1(y.transpose(-1, 1))))
+        y = self.dropout(self.conv2(y).transpose(-1, 1))
+        return self.norm2(x + y), attn
+
+class Encoder(nn.Module):
+    def __init__(self, attn_layers, conv_layers=None, norm_layer=None):
+        super(Encoder, self).__init__()
+        self.attn_layers = nn.ModuleList(attn_layers)
+        self.conv_layers = nn.ModuleList(conv_layers) if conv_layers is not None else None
+        self.norm = norm_layer
+
+    def forward(self, x, attn_mask=None):
+        attns = []
+        if self.conv_layers is not None:
+            for attn_layer, conv_layer in zip(self.attn_layers, self.conv_layers):
+                x, attn = attn_layer(x, attn_mask=attn_mask)
+                x = conv_layer(x)
+                attns.append(attn)
+            x, attn = self.attn_layers[-1](x)
+            attns.append(attn)
+        else:
+            for attn_layer in self.attn_layers:
+                x, attn = attn_layer(x, attn_mask=attn_mask)
+                attns.append(attn)
+        if self.norm is not None:
+            x = self.norm(x)
+        return x, attns
+
+class DecoderLayer(nn.Module):
+    def __init__(self, self_attention: AttentionLayer,
+                 cross_attention: AttentionLayer,
+                 d_model: int, d_ff: int, dropout: float, activation: str):
+        super().__init__()
+        self.self_attention = self_attention
+        self.cross_attention = cross_attention
+        self.norm1 = nn.LayerNorm(d_model)
+        self.norm2 = nn.LayerNorm(d_model) 
+        self.norm3 = nn.LayerNorm(d_model) 
+        self.conv1 = nn.Conv1d(in_channels=d_model, out_channels=d_ff, kernel_size=1)
+        self.conv2 = nn.Conv1d(in_channels=d_ff, out_channels=d_model, kernel_size=1)
+        self.dropout = nn.Dropout(dropout)
+        self.activation = F.gelu if activation == "gelu" else F.relu
+        # guard: 
+        assert self.self_attention.n_heads == self.cross_attention.n_heads, \
+            f"Decoder self-attn heads ({self.self_attention.n_heads}) != cross-attn heads ({self.cross_attention.n_heads})"
+
+
+    def forward(self, x, cross, x_mask=None, cross_mask=None):
+        x = x + self.dropout(self.self_attention(x, x, x, attn_mask=x_mask)[0])
+        x = self.norm1(x)
+        x = x + self.dropout(self.cross_attention(x, cross, cross, attn_mask=cross_mask)[0])
+        y = x = self.norm2(x)
+        y = self.dropout(self.activation(self.conv1(y.transpose(-1, 1))))
+        y = self.dropout(self.conv2(y).transpose(-1, 1))
+        return self.norm3(x + y)
+
+class Decoder(nn.Module):
+    def __init__(self, layers, norm_layer=None):
+        super(Decoder, self).__init__()
+        self.layers = nn.ModuleList(layers)
+        self.norm = norm_layer
+
+    def forward(self, x, cross, x_mask=None, cross_mask=None):
+        for layer in self.layers:
+            x = layer(x, cross, x_mask=x_mask, cross_mask=cross_mask)
+        if self.norm is not None:
+            x = self.norm(x)
+        return x
+
+class ConvLayer(nn.Module):
+    def __init__(self, c_in):
+        super(ConvLayer, self).__init__()
+        self.downConv = nn.Conv1d(in_channels=c_in, out_channels=c_in, kernel_size=3, padding=2, padding_mode='circular')
+        self.norm = nn.BatchNorm1d(c_in)
+        self.activation = nn.ELU()
+        self.maxPool = nn.MaxPool1d(kernel_size=3, stride=2, padding=1)
+
+    def forward(self, x):
+        x = self.downConv(x.permute(0, 2, 1))
+        x = self.norm(x)
+        x = self.activation(x)
+        x = self.maxPool(x)
+        x = x.transpose(1, 2)
+        return x
+
+class TriangularCausalMask:
+    def __init__(self, B, L, device="cpu"):
+        mask_shape = [B, 1, L, L]
+        with torch.no_grad():
+            self._mask = torch.triu(torch.ones(mask_shape, dtype=torch.bool), diagonal=1).to(device)
+
+    @property
+    def mask(self):
+        return self._mask
+
+class FullAttention(nn.Module):
+    def __init__(self, mask_flag=True, scale=None, attention_dropout=0.1, output_attention=False, factor=None):
+        super().__init__()
+        self.mask_flag = mask_flag
+        self.scale = scale
+        self.dropout = nn.Dropout(attention_dropout)
+        self.output_attention = output_attention
+        self.input_layout = "blhe"  # << declare intent
+
+    def forward(self, queries, keys, values, attn_mask=None):
+        # queries: (B, L_q, H, E), keys: (B, S, H, E), values: (B, S, H, V)
+        Bq, Lq, Hq, Eq = queries.shape
+        Bk, Sk, Hk, Ek = keys.shape
+        Bv, Sv, Hv, Vd = values.shape
+
+        # Runtime guards (#4)
+        assert Bq == Bk == Bv, f"Batch mismatch: {Bq}, {Bk}, {Bv}"
+        assert Hq == Hk == Hv, f"Heads mismatch: Q={Hq}, K={Hk}, V={Hv}"
+        assert Eq == Ek,       f"Key/query head dims mismatch: {Eq} vs {Ek}"
+        assert Sk == Sv,       f"Key/Value length mismatch: {Sk} vs {Sv}"
+
+        scale = self.scale or (Eq ** -0.5)
+        scores = torch.einsum("blhe,bshe->blhs", queries, keys) * scale  # (B,Lq,H,S)
+
+        if self.mask_flag and attn_mask is not None:
+            scores = scores.masked_fill(attn_mask, float("-inf"))
+
+        A = torch.softmax(scores, dim=-1)
+        A = self.dropout(A)
+        context = torch.einsum("blhs,bshe->blhe", A, values)  # (B,Lq,H,Vd)
+
+        return (context, A) if self.output_attention else (context, None)
+
+
+class DataEmbedding(nn.Module):
+    def __init__(self, c_in, d_model, embed_type='fixed', freq='d', dropout=0.1):
+        super(DataEmbedding, self).__init__()
+        self.value_embedding = nn.Linear(c_in, d_model)
+        self.dropout = nn.Dropout(p=dropout)
+
+    def forward(self, x, x_mark=None):
+        x = self.value_embedding(x)
+        if x_mark is not None:
+            logging.debug(f"DataEmbedding: x={x.shape}, x_mark={x_mark.shape}")
+            x_mark = x_mark[:, :, :x.shape[-1]]
+            x = x + x_mark
+        return self.dropout(x)
+
+class InForecaster(nn.Module):
+    def __init__(self, input_size: int, enc_in: int, dec_in: int, c_out: int, 
+                 seq_len: int, label_len: int, out_len: int, 
+                 d_model=512, n_heads=8, d_k=None, d_v=None, e_layers=3, d_layers=2, d_ff=512, 
+                 dropout=0.0, attn='prob', embed='fixed', freq='d', activation='gelu', 
+                 output_attention=False, distil=True,
+                 device=torch.device('cuda:0')):
+        super(InForecaster, self).__init__()
+        self.model_type = 'Informer'
+        self.attn = attn
+        self.seq_len = seq_len
+        self.label_len = label_len
+        self.pred_len = out_len
+        self.output_attention = output_attention
+        self.num_targets = c_out  # output_size 
+        self.n_heads = n_heads
+        self.d_k = d_k if d_k is not None else d_model // self.n_heads
+        self.d_v = d_v if d_v is not None else d_model // self.n_heads
+        if d_model % n_heads != 0:
+            raise ValueError(f"d_model ({d_model}) must be divisible by n_heads ({n_heads})")
+
+        # Embedding
+        self.enc_embedding = DataEmbedding(enc_in, d_model, embed, freq, dropout)
+        self.dec_embedding = DataEmbedding(dec_in, d_model, embed, freq, dropout)
+        
+        # Encoder
+        Attn = ProbSparseAttention if attn == 'prob' else FullAttention
+        self.encoder = Encoder(
+            [
+                EncoderLayer(
+                    AttentionLayer(Attn(False, factor=10, attention_dropout=dropout, output_attention=output_attention), 
+                                   d_model, n_heads),
+                    d_model,
+                    d_ff,
+                    dropout=dropout,
+                    activation=activation
+                ) for l in range(e_layers)
+            ],
+            [
+                ConvLayer(d_model) for l in range(e_layers - 1)
+            ] if distil else None,
+            norm_layer=torch.nn.LayerNorm(d_model)
+        )
+        
+        # Decoder
+        self.decoder = Decoder(
+            [
+                DecoderLayer(
+                    AttentionLayer(Attn(True, factor=10, attention_dropout=dropout, output_attention=False),
+                                   d_model, n_heads),
+                    AttentionLayer(FullAttention(False, factor=10, attention_dropout=dropout, output_attention=False),
+                                   d_model, n_heads),
+                    d_model,
+                    d_ff,
+                    dropout=dropout,
+                    activation=activation,
+                ) for l in range(d_layers)
+            ],
+            norm_layer=torch.nn.LayerNorm(d_model)
+        )
+        
+        self.projection = nn.Linear(d_model, self.num_targets)
+        self.to(device)
+
+    def forward(self, x_enc, x_mark_enc=None, x_dec=None, x_mark_dec=None,
+                enc_self_mask=None, dec_self_mask=None, dec_enc_mask=None):
+        logging.debug(f"InForecaster forward: x_enc={x_enc.shape}, x_mark_enc={x_mark_enc.shape if x_mark_enc is not None else None}, "
+                      f"x_dec={x_dec.shape}, x_mark_dec={x_mark_dec.shape if x_mark_dec is not None else None}")
+        if torch.isnan(x_enc).any() or (x_mark_enc is not None and torch.isnan(x_mark_enc).any()) or \
+           torch.isnan(x_dec).any() or (x_mark_dec is not None and torch.isnan(x_mark_dec).any()):
+            logging.warning("NaNs detected in input tensors")
+        enc_out = self.enc_embedding(x_enc, x_mark_enc)
+        enc_out, attns = self.encoder(enc_out, attn_mask=enc_self_mask)
+        dec_out = self.dec_embedding(x_dec, x_mark_dec)
+        dec_out = self.decoder(dec_out, enc_out, x_mask=dec_self_mask, cross_mask=dec_enc_mask)
+        dec_out = self.projection(dec_out[:, -self.pred_len:, :])
+        #dec_out = dec_out.reshape(-1, self.pred_len, self.num_targets)
+        
+        if self.output_attention:
+            return dec_out, attns
+        return dec_out
+
+    
+# models/derits.py
+from spectral import (
+    apply_freq_derivative, inverse_freq_derivative,
+    ComplexLinear, ComplexDepthwiseConvFreq, BandMask )
+
+class FourierConvBlock(nn.Module):
+    """
+    Frequency-domain conv block:
+      - 1x1 complex linear (channel mix)
+      - depthwise conv over frequency bins
+      - residual + dropout
+    """
+    def __init__(self, channels, kernel_size=5, dropout=0.1):
+        super().__init__()
+        self.cmix = ComplexLinear(channels, channels)
+        self.dw = ComplexDepthwiseConvFreq(channels, kernel_size=kernel_size)
+        self.dropout = nn.Dropout(dropout)
+
+    def forward(self, zc):
+        # zc: complex [B, C, F]
+        res = zc
+        zc = self.cmix(zc)
+        zc = self.dw(zc)
+        return res + self.dropout(zc)
+
+class DerivativeBranch(nn.Module):
+    """
+    One derivative order branch:
+      - Apply (i2πf)^k
+      - Band mask (learnable)
+      - N frequency conv blocks
+      - Optional projection to D targets
+      - Inverse derivative + iRFFT back to time
+    """
+    def __init__(self, order: int, L: int, C_in: int, D: int, depth=2, kernel_size=5, dropout=0.1):
+        super().__init__()
+        self.order = order
+        self.L = L
+        self.D = D
+        self.proj_in = ComplexLinear(C_in, C_in)
+        self.blocks = nn.ModuleList([
+            FourierConvBlock(C_in, kernel_size=kernel_size, dropout=dropout) for _ in range(depth)
+        ])
+        self.band = None  # set at runtime based on F
+        self.head = ComplexLinear(C_in, D)  # map channels to D targets in frequency space
+
+    def _ensure_band(self, F, device, C_in):
+        if self.band is None:
+            self.band = BandMask(C_in, F).to(device)
+
+    def forward(self, x):  # x: real tensor [B, L, C_in]
+        B, L, C = x.shape
+
+        with torch.amp.autocast("cuda", enabled=False):
+            device = x.device
+            # time -> freq (per channel)
+            # transpose to [B, C, L] for rFFT along time
+            xt = x.transpose(1, 2)  # [B, C, L]
+            X = torch.fft.rfft(xt, dim=-1)  # [B, C, F] complex
+            Fbins = X.shape[-1]
+            self._ensure_band(Fbins, device, C)
+
+            # frequency derivative
+            Xd = apply_freq_derivative(X, order=self.order, L=L)  # complex [B,C,F]
+
+            # pre-proj & band mask
+            Xd = self.proj_in(Xd)
+            Xd, mask = self.band(Xd)
+
+            # OFCN stack
+            for blk in self.blocks:
+                Xd = blk(Xd)
+
+            # project to D targets in freq
+            Yd = self.head(Xd)  # [B, D, F] complex
+
+            # invert derivative
+            Yc = inverse_freq_derivative(Yd, order=self.order, L=L)  # [B, D, F] complex
+
+            # back to time
+            yt = torch.fft.irfft(Yc, n=L, dim=-1)  # [B, D, L] real
+            y  = yt.transpose(1, 2).contiguous()  # [B, L, D] time-last
+
+        # return last H positions are selected by the outer model head
+        return y  # [B, L, D], per-branch contribution (time-domain)
+
+class DeRiTSBackbone(nn.Module):
+    """
+    Multi-order branches + fusion + forecasting heads.
+    Produces H-step forecasts for D targets.
+    """
+    def __init__(self, L: int, H: int, C_in: int, D: int, orders=(0,1,2), depth=2, kernel_size=5, dropout=0.1):
+        super().__init__()
+        self.L, self.H, self.C_in, self.D = L, H, C_in, D
+        self.branches = nn.ModuleList([
+            DerivativeBranch(order=o, L=L, C_in=C_in, D=D, depth=depth, kernel_size=kernel_size, dropout=dropout)
+            for o in orders
+        ])
+        # fusion over branches (simple learnable weighted sum)
+        self.fusion = nn.Parameter(torch.ones(len(orders)) / len(orders))
+        # final temporal head over the last L samples -> H-step forecast
+        self.temporal_head = nn.GRU(input_size=D, hidden_size=2*D, num_layers=1, batch_first=True)
+        self.proj_out = nn.Linear(2*D, D)
+
+    def forward(self, x):  # x: [B, L, C_in]
+        B, L, C = x.shape
+        assert L == self.L
+
+        y_branches = []
+        for b in self.branches:
+            yb = b(x)  # [B, L, D]
+            y_branches.append(yb)
+
+        # fuse branches (time-domain)
+        W = torch.softmax(self.fusion, dim=0)  # [nb]
+        Y = 0.0
+        for w, yb in zip(W, y_branches):
+            Y = Y + w * yb  # [B, L, D]
+
+        # take the last context and produce H-step forecasts via a small GRU head
+        ctx = Y  # [B, L, D]
+        out_seq, _ = self.temporal_head(ctx)  # [B, L, 2D]
+        last = out_seq[:, -1:, :]  # [B,1,2D]
+        # repeat or decode auto-regressively; here: simple MLP per step
+        preds = []
+        h = last
+        for _ in range(self.H):
+            step = self.proj_out(h.squeeze(1))  # [B, D]
+            preds.append(step.unsqueeze(1))
+            # optional: feed the predicted step back through a tiny GRU cell
+            h, _ = self.temporal_head(step.unsqueeze(1))
+        yhat = torch.cat(preds, dim=1)  # [B, H, D]
+        return yhat
+
+def build_derits(cfg, X_raw, Y_raw):
+    """
+    Builds a DeRiTSBackbone using fields from TrainConfig-like cfg.
+    Expects:
+      - cfg.input_len, cfg.output_len, cfg.input_size, cfg.output_size
+      - cfg.orders (tuple/list), cfg.depth, cfg.kernel_size, cfg.dropout
+    """
+    L = int(cfg.model.params.get('input_len', cfg.input_len))
+    H = int(cfg.model.params.get('output_len', cfg.output_len))
+    C_in = int(cfg.model.params.get('input_size', cfg.input_size))
+    D = int(cfg.model.params.get('output_size', cfg.output_size))
+    orders = tuple(cfg.model.params.get('orders', (0,1,2)))
+    depth = int(cfg.model.params.get('depth', 2))
+    kernel_size = int(cfg.model.params.get('kernel_size', 5))
+    dropout = float(cfg.model.params.get('dropout', cfg.dropout))
+    rnn_hidden_mul = int(cfg.model.params.get('rnn_hidden_mul', 2))
+    model = DeRiTSBackbone(L=L, H=H, C_in=C_in, D=D,
+                           orders=orders, depth=depth, kernel_size=kernel_size,
+                           dropout=dropout, rnn_hidden_mul=rnn_hidden_mul)
+    return model
+
+
+
+# Update MODEL_CLASSES
+MODEL_CLASSES = {
+    'LSTMForecaster': LSTMForecaster,
+    'CNNLSTMForecaster': CNNLSTMForecaster,
+    'TCNForecaster': TCNForecaster,
+    'FEDForecaster': FEDForecaster,
+    #'TimesFM': TimesFMHeadWrapper,
+    'InForecaster': InForecaster,
+    'DERITS': DeRiTSBackbone, #
+}

@@ -1,10 +1,11 @@
 import torch
 import torch.nn as nn
+import torch.nn.functional as F 
 import numpy as np
 import pandas as pd
 import logging 
 from typing import Tuple, Optional, Dict, Any
-
+from copy import deepcopy
 from torch.utils.data import DataLoader, TensorDataset
 from sklearn.preprocessing import StandardScaler
 from collections import defaultdict
@@ -16,9 +17,9 @@ from accelerate import Accelerator
 from transformers import TimeSeriesTransformerConfig, TimeSeriesTransformerForPrediction
 # From sibling modules:
 from configs import TrainConfig 
-from dataprep import WindowDataset
+from dataprep import WindowDataset, build_informer_datasets
 from models import StandardScaler2D
-from models import LSTMForecaster, CNNLSTMForecaster, TCNForecaster, FEDForecaster
+from models import LSTMForecaster, CNNLSTMForecaster, TCNForecaster, FEDForecaster, InForecaster
 from models import do_predict, arima_predict
 from models import tune_weight_global, tune_weight_per_target, weighted_ensemble
 from models import make_windows
@@ -29,10 +30,14 @@ class Trainer:
     def __init__(self, cfg: TrainConfig, model: nn.Module = None, x_scaler: Optional[StandardScaler2D] = None):
         self.cfg = cfg
         # Validate device
-        if cfg.device is None or cfg.device not in ["cuda", "cpu"]:
-            self.cfg.device = "cuda" if torch.cuda.is_available() else "cpu"
-            logging.warning(f"Invalid cfg.device={cfg.device}; set to {self.cfg.device}")
-        self.device = self.cfg.device
+        if hasattr(cfg, 'device'):
+            if cfg.device in ["cuda", "cpu","gpu"]:
+                self.device = cfg.device 
+            else: 
+                self.device = "cuda" if torch.cuda.is_available() else "cpu"
+                logging.warning(f"Invalid cfg.device={cfg.device}; set to {self.cfg.device}")
+        else:
+            self.device = "cuda" if torch.cuda.is_available() else "cpu" #self.cfg.device
         self.model = model.to(self.device) if model is not None else None
         self.x_scaler = x_scaler or StandardScaler2D()
         self.history = defaultdict(list)
@@ -154,13 +159,13 @@ class Trainer:
 
             if val_loss < self.best_val_loss:
                 self.best_val_loss = val_loss
-                self.best_state = self.model.state_dict()
+                self.best_state = deepcopy(self.model.state_dict())
                 no_improve = 0
             else:
                 no_improve += 1
 
             # Logging 
-            logging.info(f"Model: {self.cfg.model_type}, Epoch {epoch+1}/{self.cfg.epochs}: Train Loss={train_loss:.6f}, Val Loss={val_loss:.6f}")
+            logging.info(f"Model: {self.cfg.model.model_type}, Epoch {epoch+1}/{self.cfg.epochs}: Train Loss={train_loss:.6f}, Val Loss={val_loss:.6f}")
             self.loss_tracker['epochs'].append(epoch+1)
             self.loss_tracker['train_loss'].append(train_loss)
             self.loss_tracker['val_loss'].append(val_loss)
@@ -233,7 +238,7 @@ class FEDTrainer(Trainer):
     def __init__(self, cfg: TrainConfig):
         model = FEDForecaster(
             input_size=cfg.input_size,
-            d_model=cfg.hidden_size,
+            hidden_size=cfg.hidden_size,
             nhead=cfg.nhead,
             num_layers=cfg.num_layers,
             dim_feedforward=cfg.dim_feedforward,
@@ -251,7 +256,7 @@ class TSTPTrainer(Trainer):
         config = TimeSeriesTransformerConfig(
             prediction_length=cfg.output_len,
             context_length=cfg.input_len,
-            d_model=cfg.hidden_size,
+            hidden_size=cfg.hidden_size,
             num_attention_heads=cfg.nhead,
             num_layers=cfg.num_layers,
             dim_feedforward=cfg.dim_feedforward,
@@ -456,7 +461,7 @@ class TSTPTrainer(Trainer):
                     n_samples += len(past_values)
             val_loss = val_loss / max(1, n_samples)
 
-            logging.info(f"Model: {self.cfg.model_type}, Epoch {epoch+1}/{self.cfg.epochs}: Train Loss={train_loss:.6f}, Val Loss={val_loss:.6f}")
+            logging.info(f"Model: {self.cfg.model.model_type}, Epoch {epoch+1}/{self.cfg.epochs}: Train Loss={train_loss:.6f}, Val Loss={val_loss:.6f}")
 
             if val_loss < self.best_val_loss:
                 self.best_val_loss = val_loss
@@ -467,84 +472,6 @@ class TSTPTrainer(Trainer):
         return self.best_val_loss
 
 
-
-def run_ensemble(
-    targets_df: pd.DataFrame,
-    prices_df: pd.DataFrame,
-    cfg: TrainConfig,
-    feature_cols=None,
-    use_multivariate: bool=False,
-    arima_jobs: int=1,
-    weight_mode: str="global",
-    tune_window: int=200,
-    max_lag: int=4
-) -> Dict[str, np.ndarray]:
-    """Run ensemble of LSTM and ARIMA models."""
-    if use_multivariate:
-        feature_cols = feature_cols or [c for c in prices_df.columns if c != "date_id"]
-        X = prices_df.set_index("date_id").loc[targets_df.index, feature_cols].to_numpy(float)
-        Y = targets_df.to_numpy(float)
-        
-        trainer = LSTMTrainer(cfg)
-        val_loss = trainer.train(X, Y)
-        model, x_scaler = trainer.model, trainer.x_scaler
-
-        tune_end = len(Y) - (max_lag + 1)
-        if tune_end <= cfg.input_len + 5:
-            raise ValueError("Not enough non-NaN history to tune.")
-        tune_start = max(0, tune_end - tune_window)
-        idx_tune = slice(tune_start, tune_end)
-        X_tune, Y_tune = X[idx_tune], Y[idx_tune]
-
-        yl_list, ya_list, yt_list = [], [], []
-        for t in range(cfg.input_len, len(Y_tune)):
-            print(f" - Loop: {t}/{len(Y_tune)-1}")
-            X_hist = X_tune[:t]
-            Y_hist = Y_tune[:t]
-            yhat_l = do_predict(model, x_scaler, Y_hist=Y_hist, input_len=cfg.input_len, X_hist=X_hist)
-            yhat_a = arima_predict(pd.DataFrame(Y_hist, columns=targets_df.columns), horizon=1, n_jobs=arima_jobs)
-            yt = Y_tune[t]
-            yl_list.append(yhat_l)
-            ya_list.append(yhat_a)
-            yt_list.append(yt)
-
-        YL = np.vstack(yl_list)
-        YA = np.vstack(ya_list)
-        YT = np.vstack(yt_list)
-        finite_rows = np.isfinite(YT).all(axis=1) & np.isfinite(YL).all(axis=1) & np.isfinite(YA).all(axis=1)
-        YTf, YLf, YAf = YT[finite_rows], YL[finite_rows], YA[finite_rows]
-
-        w = 1.0 if not finite_rows.any() else (tune_weight_per_target(YTf, YLf, YAf) if weight_mode == "per_target" else tune_weight_global(YTf, YLf, YAf))
-
-        yhat_next_l = do_predict(model, x_scaler, Y_hist=Y, input_len=cfg.input_len, X_hist=X)
-        yhat_next_a = arima_predict(targets_df, horizon=1, n_jobs=arima_jobs)
-        yhat_next = weighted_ensemble(yhat_next_l, yhat_next_a, w)
-        
-        return dict(pred_lstm=yhat_next_l, pred_arima=yhat_next_a, pred_ens=yhat_next, w=w)
-
-    else:
-        preds_l, preds_a, preds_e, ws = [], [], [], []
-        for col in targets_df.columns:
-            y = targets_df[col].to_numpy(float)
-            trainer = LSTMTrainer(cfg)
-            val_loss = trainer.train(y[:, None], y[:, None])
-            model, x_scaler = trainer.model, trainer.x_scaler
-            yhat_l = do_predict(model, x_scaler, Y_hist=y, input_len=cfg.input_len)
-            yhat_a = arima_predict(targets_df[[col]], horizon=1, n_jobs=1)[0]
-            w = 0.5
-            preds_l.append(yhat_l[0])
-            preds_a.append(yhat_a)
-            ws.append(w)
-            preds_e.append(weighted_ensemble(yhat_l[0], yhat_a, w))
-        
-        return dict(
-            pred_lstm=np.array(preds_l, dtype=float),
-            pred_arima=np.array(preds_a, dtype=float),
-            pred_ens=np.array(preds_e, dtype=float),
-            w=np.array(ws, dtype=float)
-        )
-
-
 # =======================================================================
 # TimesFM additions (trainer)
 # -----------------------------------------------------------------------
@@ -552,8 +479,6 @@ def run_ensemble(
 # TimesFM on sliding-window datasets built in dataprep.py.
 # =======================================================================
 import os
-import torch
-import logging
 from dataclasses import dataclass
 from typing import List, Tuple, Optional
 from torch.utils.data import DataLoader, Subset 
@@ -682,3 +607,376 @@ class TimesFMTrainer:
         save_path = os.path.join(self.cfg.out_dir, bank_filename)
         torch.save(bank.state_dict(), save_path)
         return save_path
+
+
+############################
+# Informer model 
+############################
+class InTrainer(Trainer):
+    """Trainer for InForecaster."""
+    def __init__(self, cfg: TrainConfig, criterion=nn.MSELoss()):
+        def _cfg_get(key, default=None):
+            # 1) Try attribute (dataclass TrainConfig)
+            if hasattr(cfg, key):
+                return getattr(cfg, key)
+            # 2) Try Hydra DictConfig layout: cfg.params.key
+            try:
+                return cfg.model.params.get(key, default)
+            except Exception:
+                pass
+            # 3) Fallback: flat dict-like
+            try:
+                return cfg.get(key, default)
+            except Exception:
+                return default
+        model_params = {
+            'input_size':   _cfg_get('input_size', 1672),
+            'output_size':  _cfg_get('output_size', 424),   # unifies c_out -> output_size
+            'input_len':    _cfg_get('input_len', 64),      # Informer: seq_len
+            'label_len':    _cfg_get('label_len', 32),
+            'output_len':   _cfg_get('output_len', 5),      # Informer: out_len
+            'hidden_size':  _cfg_get('hidden_size', 256),   # Informer: d_model
+            'nhead':        _cfg_get('nhead', 8),           # Informer: n_heads
+            'num_layers':   _cfg_get('num_layers', 3),      # Informer: e_layers
+            'd_layers':     _cfg_get('d_layers', 2),
+            'd_ff':         _cfg_get('d_ff', 512),          # <-- FIX: use d_ff (not dim_feedforward)
+            'dropout':      _cfg_get('dropout', 0.1),
+            'attn':         _cfg_get('attn', 'prob'),
+            'distil':       _cfg_get('distil', True),
+        }
+        self.criterion = criterion 
+        self.device = "cuda" if torch.cuda.is_available() else "cpu"
+        logging.info(f"InTrainer initialized with model_kwargs: {model_params}")
+        mp = model_params
+        forecaster_kwargs = dict(
+            input_size = mp['input_size'],
+            enc_in     = mp['input_size'],
+            dec_in     = mp['output_size'],
+            c_out      = mp['output_size'],
+            seq_len    = mp['input_len'],
+            label_len  = mp['label_len'],
+            out_len    = mp['output_len'],
+            d_model    = mp['hidden_size'],
+            n_heads    = mp['nhead'],
+            e_layers   = mp['num_layers'],
+            d_layers   = mp['d_layers'],
+            d_ff       = mp['d_ff'],
+            dropout    = mp['dropout'],
+            attn       = mp['attn'],
+            distil     = mp['distil'],
+        )
+        self.model = InForecaster(**forecaster_kwargs)
+        super().__init__(cfg, model=self.model)
+
+    def _unpack_batch(self, batch):
+        # ADDED: unified unpack for 5-tuple (with time feats) or 3-tuple (no time feats)
+        if len(batch) == 5:
+            x_enc, x_dec, x_mark_enc, x_mark_dec, y = batch
+        elif len(batch) == 3:
+            x_enc, x_dec, y = batch
+            x_mark_enc = x_mark_dec = None
+        else:
+            raise ValueError(f"Unexpected batch tuple length: {len(batch)}")
+        return x_enc, x_mark_enc, x_dec, x_mark_dec, y
+
+
+    def train(self, X: np.ndarray = None, Y: np.ndarray = None, train_loader: DataLoader = None, val_loader: DataLoader = None) -> float:
+        if train_loader is None or val_loader is None:
+            if X is None or Y is None:
+                raise ValueError("Must provide either (train_loader, val_loader) or (X, Y)")
+            if X.ndim != 2 or Y.ndim != 2:
+                raise ValueError(f"Expected raw X (N, F) and Y (N, T), got shapes {X.shape}, {Y.shape}")
+            train_loader, val_loader, _ = build_informer_datasets(
+                self.cfg, X, Y, use_time_feats=True
+            )
+
+        # Optimizer
+        opt_class = {"Adam": torch.optim.Adam, "AdamW": torch.optim.AdamW, "SGD": torch.optim.SGD}[self.cfg.optimizer]
+        self.optimizer = opt_class(self.model.parameters(), lr=self.cfg.lr, weight_decay=self.cfg.weight_decay)
+
+        # Scheduler
+        steps_per_epoch = max(1, len(train_loader))
+        scheduler = self.build_scheduler(self.optimizer, steps_per_epoch)
+
+        no_improve = 0
+        for epoch in range(self.cfg.epochs):
+            self.model.train()
+            total_loss = 0.0
+            n_samples = 0
+            for batch in train_loader:
+                x_enc, x_mark_enc, x_dec, x_mark_dec, y = self._unpack_batch(batch)
+
+                x_enc = x_enc.to(self.device, non_blocking=True)
+                x_dec = x_dec.to(self.device, non_blocking=True)
+                y     = y.to(self.device, non_blocking=True)
+                if x_mark_enc is not None:
+                    x_mark_enc = x_mark_enc.to(self.device, non_blocking=True)
+                    x_mark_dec = x_mark_dec.to(self.device, non_blocking=True)
+
+                pred = self.model(x_enc, x_mark_enc=x_mark_enc, x_dec=x_dec, x_mark_dec=x_mark_dec)
+                if pred.size(0) != y.size(0) and pred.size(0) == y.size(0) * self.cfg.output_len:
+                    # Recover from accidental batch*time flattening
+                    pred = pred.view(y.size(0), self.cfg.output_len, -1)
+                # Expect multi-horizon: pred (B,T,C), y (B,T,C)
+                if pred.dim() == 2: pred = pred.unsqueeze(1)     # (B,1,C) fallback
+                if y.dim() == 2:
+                    raise RuntimeError(f"Labels must be (B,T,C); got {y.shape}. "
+                                    f"Ensure InformerWindowDataset returns y with shape (T,C).")
+
+                B, T, C = pred.shape
+                assert y.shape == (B, T, C), f"pred {pred.shape} vs y {y.shape}"
+
+                loss = self.criterion(pred.reshape(B*T, C), y.reshape(B*T, C))
+                #loss = self.masked_mse(pred, y) if self.cfg.partially_finite_target else nn.MSELoss()(pred, y)
+                self.optimizer.zero_grad()
+                loss.backward()
+                if self.cfg.clip_grad_norm:
+                    torch.nn.utils.clip_grad_norm_(self.model.parameters(), self.cfg.clip_grad_norm)
+                self.optimizer.step()
+                total_loss += loss.item() * len(x_enc)
+                n_samples += len(x_enc)
+            train_loss = total_loss / max(1, n_samples)
+
+            val_loss = self.validate(val_loader)
+
+            self.history["train_loss"].append(train_loss)
+            self.history["val_loss"].append(val_loss)
+
+            if val_loss < self.best_val_loss:
+                self.best_val_loss = val_loss
+                self.best_state = self.model.state_dict()
+                no_improve = 0
+            else:
+                no_improve += 1
+
+            if no_improve >= self.cfg.patience:
+                logging.info(f"Early stopping at epoch {epoch}")
+                break
+
+            if scheduler and self.cfg.lr_policy == "plateau":
+                scheduler.step(val_loss)
+            elif scheduler:
+                scheduler.step()
+
+            logging.info(f"Model: {self.cfg.model.model_type}, Epoch {epoch+1}/{self.cfg.epochs}: Train Loss={train_loss:.6f}, Val Loss={val_loss:.6f}")
+
+        if self.best_state:
+            self.model.load_state_dict(self.best_state)
+        return self.best_val_loss
+
+    def validate(self, val_loader: DataLoader) -> float:
+        self.model.eval()
+        total, denom = 0.0, 0
+        with torch.no_grad():
+            for batch in val_loader:
+                x_enc, x_mark_enc, x_dec, x_mark_dec, y = self._unpack_batch(batch)
+                x_enc = x_enc.to(self.device, non_blocking=True)
+                x_dec = x_dec.to(self.device, non_blocking=True)
+                y     = y.to(self.device, non_blocking=True)
+                if x_mark_enc is not None:
+                    x_mark_enc = x_mark_enc.to(self.device, non_blocking=True)
+                    x_mark_dec = x_mark_dec.to(self.device, non_blocking=True)
+
+                pred = self.model(x_enc, x_mark_enc=x_mark_enc, x_dec=x_dec, x_mark_dec=x_mark_dec)
+                if pred.dim() == 2: pred = pred.unsqueeze(1)
+
+                B, T, C = pred.shape
+                assert y.shape == (B, T, C), f"pred {pred.shape} vs y {y.shape}"
+                loss = self.criterion(pred.reshape(B*T, C), y.reshape(B*T, C))
+                total += loss.item() * (B*T)      # weight by batch horizons
+                denom += (B*T)
+        return total / max(1, denom)
+
+
+
+
+from models import DeRiTSBackbone
+from utils import mae_loss
+from spectral import freq_derivative_multiplier, apply_freq_derivative, inverse_freq_derivative
+from spectral import ComplexLinear, ComplexDepthwiseConvFreq, BandMask
+
+class DERTrainer(Trainer):
+    """
+    Minimal trainer specialized for DERITS:
+    - accepts TensorDataset or custom dataset
+    - supports AMP, grad clipping
+    - adds optional spectral regularizers
+    """
+    def __init__(self, cfg, train_ds, val_ds, device="cuda"):
+        super().__init__(cfg) 
+        import torch
+        import torch.nn as nn
+        self.cfg = cfg
+        if hasattr(cfg,'device'):
+            self.device = cfg.device 
+        else:
+            self.device = torch.device(device if torch.cuda.is_available() else "cpu")
+        self.train_loader = DataLoader(train_ds, batch_size=cfg.batch_size, shuffle=True,  num_workers=cfg.num_workers, drop_last=False)
+        self.val_loader   = DataLoader(val_ds,   batch_size=cfg.batch_size, shuffle=False, num_workers=cfg.num_workers, drop_last=False)
+
+        class ComplexDropout(nn.Module):
+            def __init__(self, p: float = 0.1, inplace: bool = False):
+                super().__init__()
+                self.p = p
+                self.inplace = inplace
+            def forward(self, zc: torch.Tensor) -> torch.Tensor:
+                # zc: complex tensor
+                zr = F.dropout(zc.real, p=self.p, training=self.training, inplace=self.inplace)
+                zi = F.dropout(zc.imag, p=self.p, training=self.training, inplace=self.inplace)
+                return torch.complex(zr, zi)
+
+
+        # ---- tiny DERITS backbone here (import your version if you put it elsewhere)
+        class FourierConvBlock(nn.Module):
+            def __init__(self, channels, kernel_size=5, dropout=0.1):
+                super().__init__()
+                self.cmix = ComplexLinear(channels, channels)
+                self.dw = ComplexDepthwiseConvFreq(channels, kernel_size=kernel_size)
+                #self.dropout = nn.Dropout(dropout)
+                self.cdrop = ComplexDropout(dropout) 
+            def forward(self, zc):  # complex [B,C,F]
+                res = zc
+                zc = self.cmix(zc) 
+                zc = self.dw(zc)
+                return res + self.cdrop(zc) 
+
+        class _DerivativeBranch(nn.Module):
+            def __init__(self, order, L, C_in, D, depth=2, kernel_size=5, dropout=0.1):
+                super().__init__()
+                self.order, self.L, self.C_in, self.D = order, L, C_in, D
+                self.proj_in = ComplexLinear(C_in, C_in)
+                self.blocks = nn.ModuleList([FourierConvBlock(C_in, kernel_size, dropout) for _ in range(depth)])
+                self.band = None
+                self.head = ComplexLinear(C_in, D)
+
+            def _ensure_band(self, F, device):
+                if self.band is None:
+                    self.band = BandMask(self.C_in, F).to(device)
+                    # push the first ~1% lowest-frequency bins down at init to avoid DC dominance
+                    k0 = max(1, int(0.01 * F))
+                    with torch.no_grad():
+                        self.band.mask_logits[..., :k0] = -8.0  # sigmoid(-8) ~ 0.0003
+            
+            def forward(self, x):  # x: [B,L,C_in]
+                # --- keep complex path in full precision to avoid ComplexHalf issues ---
+                with torch.amp.autocast("cuda", enabled=False):
+                    xt = x.transpose(1, 2)                         # [B,C,L] float32
+
+                    if not torch.isfinite(xt).all():
+                        logging.warning("Non-finite values in input x; replacing with zeros")
+                        xt = torch.nan_to_num(xt, nan=0.0, posinf=1e6, neginf=-1e6)        
+                    
+                    X  = torch.fft.rfft(xt, dim=-1)                # [B,C,F] complex64
+                    Fbins = X.shape[-1]
+                    self._ensure_band(Fbins, X.device)
+
+                    Xd = apply_freq_derivative(X, order=self.order, L=self.L)  # complex64
+                    Xd = self.proj_in(Xd)                                      # complex64
+                    Xd, _ = self.band(Xd)                                      # complex64
+                    for blk in self.blocks:
+                        Xd = blk(Xd)                                           # complex64
+                    Yd = self.head(Xd)                                         # [B,D,F] complex64
+                    Yc = inverse_freq_derivative(Yd, order=self.order, L=self.L)
+                    yt = torch.fft.irfft(Yc, n=self.L, dim=-1)                 # [B,D,L] float32
+                    yt = torch.clamp(yt, min=-10.0, max=10.0)
+                    y  = yt.transpose(1, 2).contiguous()                       # [B,L,D] float32
+
+                    # last-resort guard (prevents rare NaNs from infecting the decoder)
+                    y = torch.nan_to_num(y, nan=0.0, posinf=1e6, neginf=-1e6)
+
+                return y
+
+
+        class DeRiTSBackbone(nn.Module):
+            def __init__(self, L, H, C_in, D, orders=(0,1,2), depth=2, kernel_size=5, dropout=0.1, rnn_hidden_mul=2):
+                super().__init__()
+                self.model_type = 'DERITS'
+                self.num_targets = D
+                self.L, self.H, self.C_in, self.D = L, H, C_in, D
+                orders = [int(o) for o in orders]  # ← coerce here
+                self.branches = nn.ModuleList([_DerivativeBranch(o, L, C_in, D, depth, kernel_size, dropout)
+                               for o in orders])
+                self.fusion = nn.Parameter(torch.ones(len(orders)) / max(1, len(orders)))
+                self.temporal_head = nn.GRU(input_size=D, hidden_size=rnn_hidden_mul*D, batch_first=True)
+                self.proj_out = nn.Linear(rnn_hidden_mul*D, D)
+            def forward(self, x):  # x: [B,L,C_in]
+                ys = [b(x) for b in self.branches]        # [B,L,D] each
+                W = torch.softmax(self.fusion, dim=0)
+                Y = sum(w * y for w, y in zip(W, ys))     # [B,L,D]
+                seq, _ = self.temporal_head(Y)            # [B,L,r]
+                h = seq[:, -1:, :]
+                preds = []
+                for _ in range(self.H):
+                    step = self.proj_out(h.squeeze(1))    # [B,D]
+                    preds.append(step.unsqueeze(1))
+                    h, _ = self.temporal_head(step.unsqueeze(1))
+                return torch.cat(preds, dim=1)            # [B,H,D]
+
+        self.model = DeRiTSBackbone(
+            L=cfg.L, H=cfg.H, C_in=cfg.C_in, D=cfg.D,
+            orders=tuple(cfg.orders), depth=cfg.depth, kernel_size=cfg.kernel_size,
+            dropout=cfg.dropout, rnn_hidden_mul=getattr(cfg, "rnn_hidden_mul", 2)
+        ).to(self.device)
+
+        self.opt = torch.optim.AdamW(self.model.parameters(), lr=cfg.lr, weight_decay=cfg.wd)
+        self.crit = nn.L1Loss()
+        self.cuda = "cuda" if torch.cuda.is_available() else "cpu"
+        self.scaler = torch.amp.GradScaler(self.cuda, enabled=cfg.amp)
+
+    # ---- optional spectral regularizers
+    def _bandmask_l1(self):
+        reg = 0.0
+        for m in self.model.modules():
+            if hasattr(m, "band") and m.band is not None and hasattr(m.band, "mask_logits"):
+                reg = reg + m.band.mask_logits.abs().mean()
+        return getattr(self.cfg, "band_l1", 0.0) * reg
+
+    def _highfreq_penalty(self):
+        w = getattr(self.cfg, "hf_weight", 0.0)
+        if w <= 0: return 0.0
+        frac = getattr(self.cfg, "hf_fraction", 0.2)
+        reg = 0.0
+        for m in self.model.modules():
+            if hasattr(m, "band") and m.band is not None:
+                mask = m.band.mask_logits.sigmoid()   # [1,C,F]
+                F = mask.shape[-1]; k0 = int((1.0 - frac) * F)
+                if k0 < F: reg = reg + mask[..., k0:].mean()
+        return w * reg
+
+    def _unpack(self, batch):
+        # Accept either dict or tuple batches
+        if isinstance(batch, dict):
+            x, y = batch["x"], batch["y"]
+        else:
+            x, y = batch
+        return x.to(self.device), y.to(self.device)
+
+    def train_one_epoch(self, train=True):
+        loader = self.train_loader if train else self.val_loader
+        self.model.train(mode=train)
+        total, n = 0.0, 0
+        for batch in loader:
+            x, y = self._unpack(batch)          # x: [B,L,C], y: [B,H,D]
+            if not torch.isfinite(x).all() or not torch.isfinite(y).all():
+                logging.warning(f"Non-finite values in batch: x={torch.isfinite(x).all().item()}, y={torch.isfinite(y).all().item()}")
+            with torch.amp.autocast(self.cuda, enabled=self.cfg.amp):
+                yhat = self.model(x)
+                yhat = torch.clamp(yhat, min=-1.0, max=1.0)
+                loss = self.crit(yhat, y) + self._bandmask_l1() + self._highfreq_penalty()
+                if not torch.isfinite(loss):
+                    logging.warning("Non-finite loss encountered; skipping batch.")
+                    loss = self.masked_mse(yhat, y) + self._bandmask_l1() + self._highfreq_penalty()
+                    if not torch.isfinite(loss):
+                        logging.warning("Masked MSE still non-finite; skipping batch")
+                        continue
+            
+            if train:
+                self.opt.zero_grad(set_to_none=True)
+                self.scaler.scale(loss).backward()
+                if getattr(self.cfg, "grad_clip", 0.0) > 0:
+                    self.scaler.unscale_(self.opt)
+                    torch.nn.utils.clip_grad_norm_(self.model.parameters(), self.cfg.grad_clip)
+                self.scaler.step(self.opt); self.scaler.update()
+            total += loss.item() * len(x); n += len(x)
+        return total / max(1, n)
+
