@@ -1727,7 +1727,7 @@ class DerivativeBranch(nn.Module):
         # return last H positions are selected by the outer model head
         return y  # [B, L, D], per-branch contribution (time-domain)
 
-class DeRiTSBackbone(nn.Module):
+class DERBackbone(nn.Module):
     """
     Multi-order branches + fusion + forecasting heads.
     Produces H-step forecasts for D targets.
@@ -1777,7 +1777,7 @@ class DeRiTSBackbone(nn.Module):
 
 def build_derits(cfg, X_raw, Y_raw):
     """
-    Builds a DeRiTSBackbone using fields from TrainConfig-like cfg.
+    Builds a DERBackbone using fields from TrainConfig-like cfg.
     Expects:
       - cfg.input_len, cfg.output_len, cfg.input_size, cfg.output_size
       - cfg.orders (tuple/list), cfg.depth, cfg.kernel_size, cfg.dropout
@@ -1791,7 +1791,7 @@ def build_derits(cfg, X_raw, Y_raw):
     kernel_size = int(cfg.model.params.get('kernel_size', 5))
     dropout = float(cfg.model.params.get('dropout', cfg.dropout))
     rnn_hidden_mul = int(cfg.model.params.get('rnn_hidden_mul', 2))
-    model = DeRiTSBackbone(L=L, H=H, C_in=C_in, D=D,
+    model = DERBackbone(L=L, H=H, C_in=C_in, D=D,
                            orders=orders, depth=depth, kernel_size=kernel_size,
                            dropout=dropout, rnn_hidden_mul=rnn_hidden_mul)
     return model
@@ -1806,5 +1806,5 @@ MODEL_CLASSES = {
     'FEDForecaster': FEDForecaster,
     #'TimesFM': TimesFMHeadWrapper,
     'InForecaster': InForecaster,
-    'DERITS': DeRiTSBackbone, #
+    'DERITS': DERBackbone, #
 }

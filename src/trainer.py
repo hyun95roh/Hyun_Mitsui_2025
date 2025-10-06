@@ -790,7 +790,7 @@ class InTrainer(Trainer):
 
 
 
-from models import DeRiTSBackbone
+from models import DERBackbone
 from utils import mae_loss
 from spectral import freq_derivative_multiplier, apply_freq_derivative, inverse_freq_derivative
 from spectral import ComplexLinear, ComplexDepthwiseConvFreq, BandMask
@@ -887,7 +887,7 @@ class DERTrainer(Trainer):
                 return y
 
 
-        class DeRiTSBackbone(nn.Module):
+        class DERBackbone(nn.Module):
             def __init__(self, L, H, C_in, D, orders=(0,1,2), depth=2, kernel_size=5, dropout=0.1, rnn_hidden_mul=2):
                 super().__init__()
                 self.model_type = 'DERITS'
@@ -912,7 +912,7 @@ class DERTrainer(Trainer):
                     h, _ = self.temporal_head(step.unsqueeze(1))
                 return torch.cat(preds, dim=1)            # [B,H,D]
 
-        self.model = DeRiTSBackbone(
+        self.model = DERBackbone(
             L=cfg.L, H=cfg.H, C_in=cfg.C_in, D=cfg.D,
             orders=tuple(cfg.orders), depth=cfg.depth, kernel_size=cfg.kernel_size,
             dropout=cfg.dropout, rnn_hidden_mul=getattr(cfg, "rnn_hidden_mul", 2)
