@@ -7,7 +7,6 @@ from torch.nn.utils import weight_norm
 from math import sqrt 
 import torch 
 import warnings 
-import pmdarima as pm 
 import joblib
 import json 
 import os 
@@ -233,79 +232,7 @@ def do_predict(
     return out[0, lag, :], metadata  # (num_targets,), metadata #pick step = lag (0~4)
 
 # ARIMA forcaster 
-@dataclass 
-class ARIMAConfig:
-    seasonal: bool = False 
-    m: int = 1 # season length (12=monthly, 5=weekday, etc)
-    info_criteron: str = 'aicc' # aic, bic, aicc 
-    stepwise: bool = True 
-    max_p: int = 5 
-    max_q: int = 5 
-    max_d: int = 2 
-    max_P: int = 2 
-    max_Q: int = 2 
-    max_D: int = 1 
-
-class ArimaForecaster:
-    def __init__(self, cfg: ARIMAConfig):
-        self.cfg = cfg 
-        self.model = None 
-        self.model_type = 'ARIMA'
-
-    def fit(self, train_vals: np.ndarray):
-        train_vals = pd.Series(train_vals).dropna().values
-        if len(train_vals) < 20:
-            self.model = ("naive", 0.0)  # fallback
-            return self
-        self.model = pm.auto_arima(
-            train_vals, 
-            seasonal= self.cfg.seasonal, 
-            m = self.cfg.m,
-            information_criterion = self.cfg.info_criteron,
-            stepwise = self.cfg.stepwise, 
-            max_p = self.cfg.max_p, 
-            max_q = self.cfg.max_q, 
-            max_d = self.cfg.max_d, 
-            max_P = self.cfg.max_P, 
-            max_Q = self.cfg.max_Q, 
-            max_D = self.cfg.max_D, 
-            error_action = 'ignore', 
-            suppress_warnings = True, 
-            )
-        return self 
-    
-    def predict(self, horizon:int) -> np.ndarray:
-        return self.model.predict(n_periods=horizon) 
-
-def arima_predict(Y_df:pd.DataFrame,
-                  horizon: int = 1, 
-                  n_jobs: int = 1, 
-                  arima_builder=lambda:ArimaForecaster(ARIMAConfig(seasonal=False, m=1))):
-    """
-    Y_df: (N, Target) DataFrame of targets (e.g., your derived 400+ log-return targets), index=date_id-sorted.
-    Returns: np.ndarray of shape (Target,) with 1-step predictions at the end of Y_df.
-    """
-    print(" --- Model: ARIMA")
-    t_s = time() 
-    cols = list(Y_df.columns)
-    last_vals = [] 
-
-    def _one(col):
-        y = Y_df[col].to_numpy(dtype=float)
-        try:
-            model = arima_builder().fit(y) 
-            return model.predict(horizon)[0] 
-        except Exception as e:
-            warnings.warn(f"ARIMA failed on {col}: {e}") 
-            return np.nan 
-    
-    if n_jobs == 1:
-        for c in cols: last_vals.append(_one(c)) 
-
-    else:
-        last_vals = Parallel(n_jobs=n_jobs, backend='loky')(delayed(_one)(c) for c in cols)
-    #print(f"Prediction --- done!  |  Duration: {time()-t_s}") 
-    return np.array(last_vals, dtype=float)  # shape (Target,)
+## removed 
 
 # Ensemble
 def weighted_ensemble(lstm_pred, arima_pred, w):

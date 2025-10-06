@@ -20,7 +20,7 @@ from configs import TrainConfig
 from dataprep import WindowDataset, build_informer_datasets
 from models import StandardScaler2D
 from models import LSTMForecaster, CNNLSTMForecaster, TCNForecaster, FEDForecaster, InForecaster
-from models import do_predict, arima_predict
+from models import do_predict
 from models import tune_weight_global, tune_weight_per_target, weighted_ensemble
 from models import make_windows
 
