@@ -1,1 +1,7 @@
 ~/vscode/portfolio/mitsui_2025/checkpoints/best/*.pt filter=lfs diff=lfs merge=lfs -text
+*.pt filter=lfs diff=lfs merge=lfs -text
+*.pth filter=lfs diff=lfs merge=lfs -text
+checkpoints/** filter=lfs diff=lfs merge=lfs -text
+*.pt filter=lfs diff=lfs merge=lfs -text
+*.pth filter=lfs diff=lfs merge=lfs -text
+checkpoints/** filter=lfs diff=lfs merge=lfs -text
