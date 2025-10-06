@@ -461,7 +461,7 @@ class InAdapter:
 
 
 @dataclass
-class DeRiTSConfig:
+class DERITSConfig:
     L: int = 256
     H: int = 16
     C_in: int = 32   # first D are targets; remaining are exogenous
@@ -477,7 +477,7 @@ class DeRiTSConfig:
     amp: bool = True
     checkpoint_path: str = "checkpoints/derits_best.pt"
 
-class DERITSAdapter:
+class DERAdapter:
     """
     Inference adapter for DERITS.
     Expects a model with:
@@ -488,14 +488,14 @@ class DERITSAdapter:
         self.model = model.eval()
         self.x_scaler = x_scaler if x_scaler is not None else _IdentityScaler2D()
         self.target_cols = list(target_cols) if target_cols is not None else None
-        logging.info(f"DERITSAdapter -> targets: {self.target_cols}")
+        logging.info(f"DERAdapter -> targets: {self.target_cols}")
 
     def predict_next(self, X_hist: pd.DataFrame, Y_hist: Optional[pd.DataFrame],
                      input_len: int, lag: int = 1):
         if self.target_cols is None:
-            raise ValueError("DERITSAdapter requires target_cols.")
+            raise ValueError("DERAdapter requires target_cols.")
         if getattr(self.model, "num_targets", None) != len(self.target_cols):
-            raise ValueError(f"DERITSAdapter: target size mismatch. Model {getattr(self.model, 'num_targets', None)} vs {len(self.target_cols)}")
+            raise ValueError(f"DERAdapter: target size mismatch. Model {getattr(self.model, 'num_targets', None)} vs {len(self.target_cols)}")
 
         cols_to_use = [c for c in X_hist.columns if c != 'date_id']
         X_full = X_hist[cols_to_use].to_numpy(dtype=float)
