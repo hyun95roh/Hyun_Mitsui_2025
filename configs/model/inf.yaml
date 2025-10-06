@@ -1,0 +1,24 @@
+model:
+  model_type: INF
+  model_class: InForecaster
+  trainer_class: InTrainer
+  params:
+    input_size: 1672
+    output_size: 424
+    output_len: 5
+    input_len: 64
+    label_len: 32
+    hidden_size: 512  # d_model
+    num_layers: 3     # e_layers
+    d_layers: 2       # Number of decoder layers
+    nhead: 8
+    dim_feedforward: 2048
+    dropout: 0.1
+    attn: prob 
+    distil: true 
+    #mix: true 
+optimizer: AdamW
+lr: 0.0001
+epochs: 1 #50
+lr_policy: onecycle
+patience: 5 
