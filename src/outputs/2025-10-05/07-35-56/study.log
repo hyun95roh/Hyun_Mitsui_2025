@@ -1,0 +1,141 @@
+[2025-10-05 07:35:56,634][root][INFO] - Configuration: experiment:
+  data_path: ../data
+  checkpoint_dir: ../checkpoints
+  models:
+  - 'inf'
+  row_fraction: 1.0
+  num_targets: 424
+  filter_features: false
+  optuna:
+    direction: minimize
+    n_trials: 2
+    n_jobs: 2
+model:
+  model_type: default
+  model_class: default
+  trainer_class: default
+  params:
+    input_size: 1672
+    output_size: 424
+    input_len: 64
+    output_len: 5
+    batch_size: 16
+    hidden_size: 128
+    num_layers: 2
+    dropout: 0.1
+    epochs: 10
+    patience: 5
+    channels: 64
+    blocks: 3
+    kernel_size: 5
+    num_conv_layers: 2
+    tcn_kernel: 3
+    decom_kernel_size: 25
+    top_k_modes: 5
+    nhead: 8
+    dim_feedforward: 512
+    weight_decay: 0.001
+    scheduler_patience: 5
+    scheduler_factor: 0.5
+    clip_grad_norm: 1.0
+    partially_finite_target: false
+  lr: 0.001
+  optimizer: AdamW
+  lr_policy: constant
+
+[2025-10-05 07:35:56,635][root][INFO] - Set random seed to 42 for reproducibility.
+[2025-10-05 07:35:56,635][root][INFO] - CUDA version: 12.1
+[2025-10-05 07:35:56,678][root][INFO] - Device count: 1
+[2025-10-05 07:35:56,679][root][INFO] - Device name: NVIDIA GeForce RTX 4060 Laptop GPU
+[2025-10-05 07:35:56,779][root][INFO] - Loading train.csv from ../data/train.csv
+[2025-10-05 07:35:56,857][root][INFO] - Loading train_labels.csv from ../data/train_labels.csv
+[2025-10-05 07:35:56,958][root][INFO] - Loading target_pairs.csv from ../data/target_pairs.csv
+[2025-10-05 07:35:57,113][root][INFO] - X_full NaNs after imputation: 0
+[2025-10-05 07:35:57,113][root][INFO] - Y_full NaNs before imputation: 0
+[2025-10-05 07:35:57,114][root][INFO] - Y_full NaNs after imputation: 0
+[2025-10-05 07:35:57,114][root][INFO] - X_full feature count: 1671
+[2025-10-05 07:35:57,121][root][INFO] - Data loaded: X_full_np shape=(1917, 1671), Y_full_np shape=(1917, 424)
+[2025-10-05 07:35:57,121][root][INFO] - Raw data shapes: X=(1917, 1671), Y=(1917, 424)
+[2025-10-05 07:35:57,121][root][INFO] - Sample batch shapes: X=(64, 1671), Y=(64, 424)
+[2025-10-05 07:35:57,675][root][INFO] - Trial 0 started with params: {'input_size': 1671, 'output_size': 424, 'output_len': 5, 'input_len': 80, 'label_len': 64, 'hidden_size': 384, 'num_layers': 4, 'd_layers': 1, 'nhead': 8, 'dim_feedforward': 1280, 'dropout': 0.05, 'batch_size': 16, 'attn': 'prob', 'distil': True}, lr=1.734701810399463e-05, optimizer=AdamW, lr_policy=clr
+[2025-10-05 07:35:57,939][root][INFO] - Performed memory cleaning.
+[2025-10-05 07:35:58,067][root][INFO] - Trial 1 started with params: {'input_size': 1671, 'output_size': 424, 'output_len': 5, 'input_len': 112, 'label_len': 64, 'hidden_size': 256, 'num_layers': 4, 'd_layers': 3, 'nhead': 4, 'dim_feedforward': 1792, 'dropout': 0.3, 'batch_size': 16, 'attn': 'prob', 'distil': True}, lr=0.00012011817492963323, optimizer=AdamW, lr_policy=clr
+[2025-10-05 07:35:58,324][root][INFO] - GPU Memory: 1.06 GB used out of 8.00 GB
+[2025-10-05 07:35:58,324][root][INFO] - Performed memory cleaning.
+[2025-10-05 07:35:58,324][root][INFO] - GPU Memory: 1.06 GB used out of 8.00 GB
+[2025-10-05 07:35:58,329][root][INFO] - Trial 1: X_raw shape=(1917, 1671), Y_raw shape=(1917, 424), NaNs X=0, Y=0
+[2025-10-05 07:35:58,329][root][INFO] - Trial 0: X_raw shape=(1917, 1671), Y_raw shape=(1917, 424), NaNs X=0, Y=0
+[2025-10-05 07:35:58,331][root][ERROR] - Trial 1 failed: Missing key input_size
+    full_key: input_size
+    object_type=dict
+Traceback (most recent call last):
+  File "/root/vscode/portfolio/mitsui_2025/src/study.py", line 203, in objective_informer
+    trainer = InTrainer(cfg, criterion=nn.MSELoss())
+              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/root/vscode/portfolio/mitsui_2025/src/trainer.py", line 614, in __init__
+    'input_size': cfg.input_size,
+                  ^^^^^^^^^^^^^^
+  File "/root/anaconda3/envs/mitsui/lib/python3.11/site-packages/omegaconf/dictconfig.py", line 355, in __getattr__
+    self._format_and_raise(
+  File "/root/anaconda3/envs/mitsui/lib/python3.11/site-packages/omegaconf/base.py", line 231, in _format_and_raise
+    format_and_raise(
+  File "/root/anaconda3/envs/mitsui/lib/python3.11/site-packages/omegaconf/_utils.py", line 899, in format_and_raise
+    _raise(ex, cause)
+  File "/root/anaconda3/envs/mitsui/lib/python3.11/site-packages/omegaconf/_utils.py", line 797, in _raise
+    raise ex.with_traceback(sys.exc_info()[2])  # set env var OC_CAUSE=1 for full trace
+    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/root/anaconda3/envs/mitsui/lib/python3.11/site-packages/omegaconf/dictconfig.py", line 351, in __getattr__
+    return self._get_impl(
+           ^^^^^^^^^^^^^^^
+  File "/root/anaconda3/envs/mitsui/lib/python3.11/site-packages/omegaconf/dictconfig.py", line 442, in _get_impl
+    node = self._get_child(
+           ^^^^^^^^^^^^^^^^
+  File "/root/anaconda3/envs/mitsui/lib/python3.11/site-packages/omegaconf/basecontainer.py", line 73, in _get_child
+    child = self._get_node(
+            ^^^^^^^^^^^^^^^
+  File "/root/anaconda3/envs/mitsui/lib/python3.11/site-packages/omegaconf/dictconfig.py", line 480, in _get_node
+    raise ConfigKeyError(f"Missing key {key!s}")
+omegaconf.errors.ConfigAttributeError: Missing key input_size
+    full_key: input_size
+    object_type=dict
+
+[2025-10-05 07:35:58,332][root][ERROR] - Trial 0 failed: Missing key input_size
+    full_key: input_size
+    object_type=dict
+Traceback (most recent call last):
+  File "/root/vscode/portfolio/mitsui_2025/src/study.py", line 203, in objective_informer
+    trainer = InTrainer(cfg, criterion=nn.MSELoss())
+              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/root/vscode/portfolio/mitsui_2025/src/trainer.py", line 614, in __init__
+    'input_size': cfg.input_size,
+                  ^^^^^^^^^^^^^^
+  File "/root/anaconda3/envs/mitsui/lib/python3.11/site-packages/omegaconf/dictconfig.py", line 355, in __getattr__
+    self._format_and_raise(
+  File "/root/anaconda3/envs/mitsui/lib/python3.11/site-packages/omegaconf/base.py", line 231, in _format_and_raise
+    format_and_raise(
+  File "/root/anaconda3/envs/mitsui/lib/python3.11/site-packages/omegaconf/_utils.py", line 899, in format_and_raise
+    _raise(ex, cause)
+  File "/root/anaconda3/envs/mitsui/lib/python3.11/site-packages/omegaconf/_utils.py", line 797, in _raise
+    raise ex.with_traceback(sys.exc_info()[2])  # set env var OC_CAUSE=1 for full trace
+    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/root/anaconda3/envs/mitsui/lib/python3.11/site-packages/omegaconf/dictconfig.py", line 351, in __getattr__
+    return self._get_impl(
+           ^^^^^^^^^^^^^^^
+  File "/root/anaconda3/envs/mitsui/lib/python3.11/site-packages/omegaconf/dictconfig.py", line 442, in _get_impl
+    node = self._get_child(
+           ^^^^^^^^^^^^^^^^
+  File "/root/anaconda3/envs/mitsui/lib/python3.11/site-packages/omegaconf/basecontainer.py", line 73, in _get_child
+    child = self._get_node(
+            ^^^^^^^^^^^^^^^
+  File "/root/anaconda3/envs/mitsui/lib/python3.11/site-packages/omegaconf/dictconfig.py", line 480, in _get_node
+    raise ConfigKeyError(f"Missing key {key!s}")
+omegaconf.errors.ConfigAttributeError: Missing key input_size
+    full_key: input_size
+    object_type=dict
+
+[2025-10-05 07:35:58,607][root][INFO] - GPU Memory: 1.06 GB used out of 8.00 GB
+[2025-10-05 07:35:59,161][root][INFO] - Performed memory cleaning.
+[2025-10-05 07:35:59,161][root][INFO] - GPU Memory: 1.06 GB used out of 8.00 GB
+[2025-10-05 07:35:59,410][root][INFO] - Performed memory cleaning.
+[2025-10-05 07:35:59,441][root][WARNING] - No completed trials for INF. All trials were pruned or failed. Trials: 2
+[2025-10-05 07:35:59,442][root][INFO] - Trial states: [2, 2]

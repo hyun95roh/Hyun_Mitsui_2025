@@ -1,0 +1,95 @@
+[2025-10-05 08:04:27,363][root][INFO] - Configuration: experiment:
+  data_path: ../data
+  checkpoint_dir: ../checkpoints
+  models:
+  - 'inf'
+  row_fraction: 1.0
+  num_targets: 424
+  filter_features: false
+  optuna:
+    direction: minimize
+    n_trials: 2
+    n_jobs: 2
+model:
+  model_type: default
+  model_class: default
+  trainer_class: default
+  params:
+    input_size: 1672
+    output_size: 424
+    input_len: 64
+    output_len: 5
+    batch_size: 16
+    hidden_size: 128
+    num_layers: 2
+    dropout: 0.1
+    epochs: 10
+    patience: 5
+    channels: 64
+    blocks: 3
+    kernel_size: 5
+    num_conv_layers: 2
+    tcn_kernel: 3
+    decom_kernel_size: 25
+    top_k_modes: 5
+    nhead: 8
+    dim_feedforward: 512
+    weight_decay: 0.001
+    scheduler_patience: 5
+    scheduler_factor: 0.5
+    clip_grad_norm: 1.0
+    partially_finite_target: false
+  lr: 0.001
+  optimizer: AdamW
+  lr_policy: constant
+
+[2025-10-05 08:04:27,364][root][INFO] - Set random seed to 42 for reproducibility.
+[2025-10-05 08:04:27,364][root][INFO] - CUDA version: 12.1
+[2025-10-05 08:04:27,404][root][INFO] - Device count: 1
+[2025-10-05 08:04:27,405][root][INFO] - Device name: NVIDIA GeForce RTX 4060 Laptop GPU
+[2025-10-05 08:04:27,506][root][INFO] - Loading train.csv from ../data/train.csv
+[2025-10-05 08:04:27,585][root][INFO] - Loading train_labels.csv from ../data/train_labels.csv
+[2025-10-05 08:04:27,710][root][INFO] - Loading target_pairs.csv from ../data/target_pairs.csv
+[2025-10-05 08:04:27,868][root][INFO] - X_full NaNs after imputation: 0
+[2025-10-05 08:04:27,868][root][INFO] - Y_full NaNs before imputation: 0
+[2025-10-05 08:04:27,870][root][INFO] - Y_full NaNs after imputation: 0
+[2025-10-05 08:04:27,870][root][INFO] - X_full feature count: 1671
+[2025-10-05 08:04:27,876][root][INFO] - Data loaded: X_full_np shape=(1917, 1671), Y_full_np shape=(1917, 424)
+[2025-10-05 08:04:27,876][root][INFO] - Raw data shapes: X=(1917, 1671), Y=(1917, 424)
+[2025-10-05 08:04:27,876][root][INFO] - Sample batch shapes: X=(64, 1671), Y=(64, 424)
+[2025-10-05 08:04:28,340][root][INFO] - Trial 10 started with params: {'input_size': 1671, 'output_size': 424, 'output_len': 5, 'input_len': 32, 'label_len': 48, 'hidden_size': 384, 'num_layers': 3, 'd_layers': 2, 'nhead': 8, 'dim_feedforward': 512, 'dropout': 0.0, 'batch_size': 64, 'attn': 'prob', 'distil': True}, lr=5.7011183395497146e-05, optimizer=AdamW, lr_policy=onecycle
+[2025-10-05 08:04:28,616][root][INFO] - Performed memory cleaning.
+[2025-10-05 08:04:28,752][root][INFO] - GPU Memory: 1.06 GB used out of 8.00 GB
+[2025-10-05 08:04:28,756][root][INFO] - Trial 10: X_raw shape=(1917, 1671), Y_raw shape=(1917, 424), NaNs X=0, Y=0
+[2025-10-05 08:04:28,757][root][INFO] - InTrainer initialized with model_kwargs: {'enc_in': 1671, 'dec_in': 1671, 'c_out': 424, 'seq_len': 32, 'label_len': 48, 'out_len': 5, 'd_model': 384, 'n_heads': 8, 'e_layers': 3, 'd_layers': 2, 'd_ff': 512, 'dropout': 0.0, 'attn': 'prob', 'embed': 'fixed', 'freq': 'd', 'activation': 'gelu', 'output_attention': False, 'distil': True, 'device': 'cuda'}
+[2025-10-05 08:04:28,757][root][ERROR] - Trial 10 failed: InForecaster.__init__() missing 1 required positional argument: 'input_size'
+Traceback (most recent call last):
+  File "/root/vscode/portfolio/mitsui_2025/src/study.py", line 203, in objective_informer
+    trainer = InTrainer(train_cfg, criterion=nn.MSELoss())
+              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/root/vscode/portfolio/mitsui_2025/src/trainer.py", line 651, in __init__
+    model = InForecaster(**model_params)
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+TypeError: InForecaster.__init__() missing 1 required positional argument: 'input_size'
+
+[2025-10-05 08:04:29,042][root][INFO] - Trial 11 started with params: {'input_size': 1671, 'output_size': 424, 'output_len': 5, 'input_len': 32, 'label_len': 48, 'hidden_size': 384, 'num_layers': 3, 'd_layers': 2, 'nhead': 8, 'dim_feedforward': 512, 'dropout': 0.0, 'batch_size': 64, 'attn': 'prob', 'distil': True}, lr=5.0804471543098795e-05, optimizer=AdamW, lr_policy=onecycle
+[2025-10-05 08:04:29,332][root][INFO] - GPU Memory: 1.06 GB used out of 8.00 GB
+[2025-10-05 08:04:29,333][root][INFO] - Performed memory cleaning.
+[2025-10-05 08:04:29,603][root][INFO] - Performed memory cleaning.
+[2025-10-05 08:04:29,604][root][INFO] - GPU Memory: 1.06 GB used out of 8.00 GB
+[2025-10-05 08:04:29,609][root][INFO] - Trial 11: X_raw shape=(1917, 1671), Y_raw shape=(1917, 424), NaNs X=0, Y=0
+[2025-10-05 08:04:29,609][root][INFO] - InTrainer initialized with model_kwargs: {'enc_in': 1671, 'dec_in': 1671, 'c_out': 424, 'seq_len': 32, 'label_len': 48, 'out_len': 5, 'd_model': 384, 'n_heads': 8, 'e_layers': 3, 'd_layers': 2, 'd_ff': 512, 'dropout': 0.0, 'attn': 'prob', 'embed': 'fixed', 'freq': 'd', 'activation': 'gelu', 'output_attention': False, 'distil': True, 'device': 'cuda'}
+[2025-10-05 08:04:29,609][root][ERROR] - Trial 11 failed: InForecaster.__init__() missing 1 required positional argument: 'input_size'
+Traceback (most recent call last):
+  File "/root/vscode/portfolio/mitsui_2025/src/study.py", line 203, in objective_informer
+    trainer = InTrainer(train_cfg, criterion=nn.MSELoss())
+              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/root/vscode/portfolio/mitsui_2025/src/trainer.py", line 651, in __init__
+    model = InForecaster(**model_params)
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+TypeError: InForecaster.__init__() missing 1 required positional argument: 'input_size'
+
+[2025-10-05 08:04:29,893][root][INFO] - GPU Memory: 1.06 GB used out of 8.00 GB
+[2025-10-05 08:04:30,162][root][INFO] - Performed memory cleaning.
+[2025-10-05 08:04:30,185][root][WARNING] - No completed trials for INF. All trials were pruned or failed. Trials: 12
+[2025-10-05 08:04:30,186][root][INFO] - Trial states: [2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2]

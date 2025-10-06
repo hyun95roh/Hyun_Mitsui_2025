@@ -1,0 +1,178 @@
+[2025-10-05 03:22:43,882][root][INFO] - Configuration: experiment:
+  data_path: ../data
+  checkpoint_dir: ../checkpoints
+  models:
+  - 'inf'
+  row_fraction: 1.0
+  num_targets: 424
+  filter_features: false
+  optuna:
+    direction: minimize
+    n_trials: 2
+    n_jobs: 2
+model:
+  model_type: default
+  model_class: default
+  trainer_class: default
+  params:
+    input_size: 1672
+    output_size: 424
+    input_len: 64
+    output_len: 5
+    batch_size: 16
+    hidden_size: 128
+    num_layers: 2
+    dropout: 0.1
+    epochs: 10
+    patience: 5
+    channels: 64
+    blocks: 3
+    kernel_size: 5
+    num_conv_layers: 2
+    tcn_kernel: 3
+    decom_kernel_size: 25
+    top_k_modes: 5
+    nhead: 8
+    dim_feedforward: 512
+    weight_decay: 0.001
+    scheduler_patience: 5
+    scheduler_factor: 0.5
+    clip_grad_norm: 1.0
+    partially_finite_target: false
+  lr: 0.001
+  optimizer: AdamW
+  lr_policy: constant
+
+[2025-10-05 03:22:43,883][root][INFO] - Set random seed to 42 for reproducibility.
+[2025-10-05 03:22:43,884][root][INFO] - Loading train.csv from ../data/train.csv
+[2025-10-05 03:22:43,970][root][INFO] - Loading train_labels.csv from ../data/train_labels.csv
+[2025-10-05 03:22:44,076][root][INFO] - Loading target_pairs.csv from ../data/target_pairs.csv
+[2025-10-05 03:22:44,207][root][INFO] - X_full NaNs after imputation: 0
+[2025-10-05 03:22:44,207][root][INFO] - Y_full NaNs before imputation: 0
+[2025-10-05 03:22:44,209][root][INFO] - Y_full NaNs after imputation: 0
+[2025-10-05 03:22:44,209][root][INFO] - X_full feature count: 1671
+[2025-10-05 03:22:44,216][root][INFO] - Data loaded: X_full_np shape=(1917, 1671), Y_full_np shape=(1917, 424)
+[2025-10-05 03:22:44,217][root][INFO] - Raw data shapes: X=(1917, 1671), Y=(1917, 424)
+[2025-10-05 03:22:44,217][root][INFO] - Sample batch shapes: X=(64, 1671), Y=(64, 424)
+[2025-10-05 03:22:44,615][root][INFO] - Trial 6 started with params: {'input_size': 1671, 'output_size': 424, 'output_len': 5, 'input_len': 128, 'label_len': 48, 'hidden_size': 128, 'num_layers': 2, 'd_layers': 1, 'nhead': 8, 'dim_feedforward': 1024, 'dropout': 0.15000000000000002, 'batch_size': 32, 'attn': 'prob', 'distil': True, 'mix': True}, lr=0.00022760913353050654, optimizer=AdamW, lr_policy=onecycle
+[2025-10-05 03:22:44,913][root][INFO] - Performed memory cleaning.
+[2025-10-05 03:22:44,997][root][INFO] - Trial 7 started with params: {'input_size': 1671, 'output_size': 424, 'output_len': 5, 'input_len': 48, 'label_len': 32, 'hidden_size': 384, 'num_layers': 2, 'd_layers': 2, 'nhead': 8, 'dim_feedforward': 768, 'dropout': 0.15000000000000002, 'batch_size': 64, 'attn': 'prob', 'distil': True, 'mix': True}, lr=0.0005198374503951736, optimizer=AdamW, lr_policy=constant
+[2025-10-05 03:22:45,288][root][INFO] - GPU Memory: 1.06 GB used out of 8.00 GB
+[2025-10-05 03:22:45,288][root][INFO] - Performed memory cleaning.
+[2025-10-05 03:22:45,288][root][INFO] - GPU Memory: 1.06 GB used out of 8.00 GB
+[2025-10-05 03:22:45,292][root][INFO] - Trial 6: X_raw shape=(1917, 1671), Y_raw shape=(1917, 424), NaNs X=0, Y=0
+[2025-10-05 03:22:45,292][root][INFO] - Trial 7: X_raw shape=(1917, 1671), Y_raw shape=(1917, 424), NaNs X=0, Y=0
+[2025-10-05 03:22:45,292][root][INFO] - Building Informer datasets with input_len=128, output_len=5, label_len=48, use_time_feats=True
+[2025-10-05 03:22:45,292][root][INFO] - Building Informer datasets with input_len=48, output_len=5, label_len=32, use_time_feats=True
+[2025-10-05 03:22:45,651][root][INFO] - WindowDataset created: Xw shape=(1865, 48, 1671), Yw shape=(1865, 5, 424), invalid_windows: 0
+[2025-10-05 03:22:46,776][root][INFO] - WindowDataset created: Xw shape=(1785, 128, 1671), Yw shape=(1785, 5, 424), invalid_windows: 0
+[2025-10-05 03:22:48,395][root][INFO] - InformerWindowDataset created: Xw shape=(1865, 48, 1671), x_dec shape=(1865, 37, 424), Yw shape=(1865, 5, 424), mark_enc shape=(1865, 48, 384), invalid_windows=0
+[2025-10-05 03:22:48,397][root][INFO] - Informer dataset created: X_enc shape=(1865, 48, 1671), x_dec shape=(1865, 37, 424), Y shape=(1865, 5, 424), mark_enc shape=(1865, 48, 384)
+[2025-10-05 03:22:48,606][root][INFO] - Informer DataLoaders created: train=1400, val=279, test=186
+[2025-10-05 03:22:48,607][root][INFO] - Trial 7: Creating InTrainer with device=cuda
+[2025-10-05 03:22:48,608][root][INFO] - InTrainer initialized with model_kwargs: {'input_size': 1671, 'enc_in': 1671, 'dec_in': 424, 'c_out': 424, 'seq_len': 48, 'label_len': 32, 'out_len': 5, 'd_model': 384, 'n_heads': 8, 'e_layers': 2, 'd_layers': 2, 'd_ff': 768, 'dropout': 0.15000000000000002, 'attn': 'prob', 'embed': 'fixed', 'freq': 'd', 'activation': 'gelu', 'distil': True, 'mix': True, 'device': 'cuda'}
+[2025-10-05 03:22:48,741][root][INFO] - Trainer initialized with device=cuda
+[2025-10-05 03:22:48,954][root][ERROR] - Trial 7 failed: CUDA error: device-side assert triggered
+Compile with `TORCH_USE_CUDA_DSA` to enable device-side assertions.
+
+Traceback (most recent call last):
+  File "/root/vscode/portfolio/mitsui_2025/src/study.py", line 202, in objective_informer
+    val_loss = trainer.train(train_loader=train_loader, val_loader=val_loader)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/root/vscode/portfolio/mitsui_2025/src/trainer.py", line 672, in train
+    pred = self.model(x_enc, x_mark_enc=x_mark_enc, x_dec=x_dec, x_mark_dec=x_mark_dec)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/root/anaconda3/envs/mitsui/lib/python3.11/site-packages/torch/nn/modules/module.py", line 1736, in _wrapped_call_impl
+    return self._call_impl(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/root/anaconda3/envs/mitsui/lib/python3.11/site-packages/torch/nn/modules/module.py", line 1747, in _call_impl
+    return forward_call(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/root/vscode/portfolio/mitsui_2025/src/models.py", line 1554, in forward
+    enc_out, attns = self.encoder(enc_out, attn_mask=enc_self_mask)
+                     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/root/anaconda3/envs/mitsui/lib/python3.11/site-packages/torch/nn/modules/module.py", line 1736, in _wrapped_call_impl
+    return self._call_impl(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/root/anaconda3/envs/mitsui/lib/python3.11/site-packages/torch/nn/modules/module.py", line 1747, in _call_impl
+    return forward_call(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/root/vscode/portfolio/mitsui_2025/src/models.py", line 1372, in forward
+    x, attn = attn_layer(x, attn_mask=attn_mask)
+              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/root/anaconda3/envs/mitsui/lib/python3.11/site-packages/torch/nn/modules/module.py", line 1736, in _wrapped_call_impl
+    return self._call_impl(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/root/anaconda3/envs/mitsui/lib/python3.11/site-packages/torch/nn/modules/module.py", line 1747, in _call_impl
+    return forward_call(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/root/vscode/portfolio/mitsui_2025/src/models.py", line 1354, in forward
+    new_x, attn = self.attention(x, x, x, attn_mask=attn_mask)
+                  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/root/anaconda3/envs/mitsui/lib/python3.11/site-packages/torch/nn/modules/module.py", line 1736, in _wrapped_call_impl
+    return self._call_impl(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/root/anaconda3/envs/mitsui/lib/python3.11/site-packages/torch/nn/modules/module.py", line 1747, in _call_impl
+    return forward_call(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/root/vscode/portfolio/mitsui_2025/src/models.py", line 1335, in forward
+    out, attn = self.inner_attention(queries, keys, values, attn_mask)
+                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/root/anaconda3/envs/mitsui/lib/python3.11/site-packages/torch/nn/modules/module.py", line 1736, in _wrapped_call_impl
+    return self._call_impl(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/root/anaconda3/envs/mitsui/lib/python3.11/site-packages/torch/nn/modules/module.py", line 1747, in _call_impl
+    return forward_call(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/root/vscode/portfolio/mitsui_2025/src/models.py", line 1308, in forward
+    context, attn = self._update_context(context, values, scores_top, index, u, attn_mask)
+                    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/root/vscode/portfolio/mitsui_2025/src/models.py", line 1285, in _update_context
+    context_in[torch.arange(B)[:, None, None], torch.arange(H)[None, :, None], index, :] = torch.matmul(attn, V).type_as(context_in)
+    ~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+RuntimeError: CUDA error: device-side assert triggered
+Compile with `TORCH_USE_CUDA_DSA` to enable device-side assertions.
+
+
+[2025-10-05 03:22:48,957][root][ERROR] - Error during cleanup: CUDA error: device-side assert triggered
+Compile with `TORCH_USE_CUDA_DSA` to enable device-side assertions.
+
+[2025-10-05 03:22:49,895][root][INFO] - InformerWindowDataset created: Xw shape=(1785, 128, 1671), x_dec shape=(1785, 53, 424), Yw shape=(1785, 5, 424), mark_enc shape=(1785, 128, 128), invalid_windows=0
+[2025-10-05 03:22:49,906][root][INFO] - Informer dataset created: X_enc shape=(1785, 128, 1671), x_dec shape=(1785, 53, 424), Y shape=(1785, 5, 424), mark_enc shape=(1785, 128, 128)
+[2025-10-05 03:22:50,263][root][INFO] - Informer DataLoaders created: train=1340, val=267, test=178
+[2025-10-05 03:22:50,264][root][INFO] - Trial 6: Creating InTrainer with device=cuda
+[2025-10-05 03:22:50,264][root][INFO] - InTrainer initialized with model_kwargs: {'input_size': 1671, 'enc_in': 1671, 'dec_in': 424, 'c_out': 424, 'seq_len': 128, 'label_len': 48, 'out_len': 5, 'd_model': 128, 'n_heads': 8, 'e_layers': 2, 'd_layers': 1, 'd_ff': 1024, 'dropout': 0.15000000000000002, 'attn': 'prob', 'embed': 'fixed', 'freq': 'd', 'activation': 'gelu', 'distil': True, 'mix': True, 'device': 'cuda'}
+[2025-10-05 03:22:50,272][root][ERROR] - Trial 6 failed: CUDA error: device-side assert triggered
+Compile with `TORCH_USE_CUDA_DSA` to enable device-side assertions.
+
+Traceback (most recent call last):
+  File "/root/vscode/portfolio/mitsui_2025/src/study.py", line 200, in objective_informer
+    trainer = trainer_class(train_cfg)
+              ^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/root/vscode/portfolio/mitsui_2025/src/trainer.py", line 636, in __init__
+    model = InForecaster(**model_kwargs)
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/root/vscode/portfolio/mitsui_2025/src/models.py", line 1544, in __init__
+    self.to(device)
+  File "/root/anaconda3/envs/mitsui/lib/python3.11/site-packages/torch/nn/modules/module.py", line 1340, in to
+    return self._apply(convert)
+           ^^^^^^^^^^^^^^^^^^^^
+  File "/root/anaconda3/envs/mitsui/lib/python3.11/site-packages/torch/nn/modules/module.py", line 900, in _apply
+    module._apply(fn)
+  File "/root/anaconda3/envs/mitsui/lib/python3.11/site-packages/torch/nn/modules/module.py", line 900, in _apply
+    module._apply(fn)
+  File "/root/anaconda3/envs/mitsui/lib/python3.11/site-packages/torch/nn/modules/module.py", line 927, in _apply
+    param_applied = fn(param)
+                    ^^^^^^^^^
+  File "/root/anaconda3/envs/mitsui/lib/python3.11/site-packages/torch/nn/modules/module.py", line 1326, in convert
+    return t.to(
+           ^^^^^
+RuntimeError: CUDA error: device-side assert triggered
+Compile with `TORCH_USE_CUDA_DSA` to enable device-side assertions.
+
+
+[2025-10-05 03:22:50,272][root][ERROR] - Error during cleanup: CUDA error: device-side assert triggered
+Compile with `TORCH_USE_CUDA_DSA` to enable device-side assertions.
+
+[2025-10-05 03:22:50,594][root][WARNING] - No completed trials for INF. All trials were pruned or failed. Trials: 8
+[2025-10-05 03:22:50,596][root][INFO] - Trial states: [3, 3, 3, 3, 3, 3, 3, 3]

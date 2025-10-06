@@ -1,0 +1,138 @@
+[2025-10-05 14:12:07,901][root][INFO] - Configuration: experiment:
+  data_path: ../data
+  checkpoint_dir: ../checkpoints
+  models:
+  - 'inf'
+  row_fraction: 1.0
+  num_targets: 424
+  filter_features: false
+  optuna:
+    direction: minimize
+    n_trials: 2
+    n_jobs: 2
+model:
+  model_type: default
+  model_class: default
+  trainer_class: default
+  params:
+    input_size: 1672
+    output_size: 424
+    input_len: 64
+    output_len: 5
+    batch_size: 16
+    hidden_size: 128
+    num_layers: 2
+    dropout: 0.1
+    epochs: 10
+    patience: 5
+    channels: 64
+    blocks: 3
+    kernel_size: 5
+    num_conv_layers: 2
+    tcn_kernel: 3
+    decom_kernel_size: 25
+    top_k_modes: 5
+    nhead: 8
+    dim_feedforward: 512
+    weight_decay: 0.001
+    scheduler_patience: 5
+    scheduler_factor: 0.5
+    clip_grad_norm: 1.0
+    partially_finite_target: false
+  lr: 0.001
+  optimizer: AdamW
+  lr_policy: constant
+
+[2025-10-05 14:12:07,906][root][INFO] - Set random seed to 42 for reproducibility.
+[2025-10-05 14:12:07,907][root][INFO] - CUDA version: 12.1
+[2025-10-05 14:12:07,952][root][INFO] - Device count: 1
+[2025-10-05 14:12:07,955][root][INFO] - Device name: NVIDIA GeForce RTX 4060 Laptop GPU
+[2025-10-05 14:12:08,063][root][INFO] - Loading train.csv from ../data/train.csv
+[2025-10-05 14:12:08,162][root][INFO] - Loading train_labels.csv from ../data/train_labels.csv
+[2025-10-05 14:12:08,281][root][INFO] - Loading target_pairs.csv from ../data/target_pairs.csv
+[2025-10-05 14:12:08,486][root][INFO] - X_full NaNs after imputation: 0
+[2025-10-05 14:12:08,487][root][INFO] - Y_full NaNs before imputation: 0
+[2025-10-05 14:12:08,488][root][INFO] - Y_full NaNs after imputation: 0
+[2025-10-05 14:12:08,488][root][INFO] - X_full feature count: 1671
+[2025-10-05 14:12:08,500][root][INFO] - Data loaded: X_full_np shape=(1917, 1671), Y_full_np shape=(1917, 424)
+[2025-10-05 14:12:08,500][root][INFO] - Raw data shapes: X=(1917, 1671), Y=(1917, 424)
+[2025-10-05 14:12:08,500][root][INFO] - Sample batch shapes: X=(64, 1671), Y=(64, 424)
+[2025-10-05 14:12:09,289][root][INFO] - Trial 24 started with params: {'input_size': 1671, 'output_size': 424, 'output_len': 5, 'input_len': 96, 'label_len': 64, 'hidden_size': 256, 'num_layers': 3, 'd_layers': 2, 'nhead': 8, 'dim_feedforward': 768, 'dropout': 0.2, 'batch_size': 16, 'attn': 'prob', 'distil': True}, lr=8.200339198950477e-05, optimizer=AdamW, lr_policy=clr
+[2025-10-05 14:12:09,552][root][INFO] - Performed memory cleaning.
+[2025-10-05 14:12:09,583][root][INFO] - Trial 25 started with params: {'input_size': 1671, 'output_size': 424, 'output_len': 5, 'input_len': 96, 'label_len': 64, 'hidden_size': 256, 'num_layers': 3, 'd_layers': 2, 'nhead': 8, 'dim_feedforward': 768, 'dropout': 0.2, 'batch_size': 16, 'attn': 'prob', 'distil': True}, lr=7.13708456056043e-05, optimizer=AdamW, lr_policy=clr
+[2025-10-05 14:12:09,850][root][INFO] - GPU Memory: 1.06 GB used out of 8.00 GB
+[2025-10-05 14:12:09,850][root][INFO] - Performed memory cleaning.
+[2025-10-05 14:12:09,851][root][INFO] - GPU Memory: 1.06 GB used out of 8.00 GB
+[2025-10-05 14:12:09,856][root][INFO] - Trial 25: X_raw shape=(1917, 1671), Y_raw shape=(1917, 424), NaNs X=0, Y=0
+[2025-10-05 14:12:09,856][root][INFO] - InTrainer initialized with model_kwargs: {'input_size': 1671, 'output_size': 424, 'input_len': 96, 'label_len': 64, 'output_len': 5, 'hidden_size': 256, 'nhead': 8, 'num_layers': 3, 'd_layers': 2, 'd_ff': 512, 'dropout': 0.2, 'attn': 'prob', 'distil': True}
+[2025-10-05 14:12:09,856][root][INFO] - Trial 24: X_raw shape=(1917, 1671), Y_raw shape=(1917, 424), NaNs X=0, Y=0
+[2025-10-05 14:12:09,857][root][INFO] - InTrainer initialized with model_kwargs: {'input_size': 1671, 'output_size': 424, 'input_len': 96, 'label_len': 64, 'output_len': 5, 'hidden_size': 256, 'nhead': 8, 'num_layers': 3, 'd_layers': 2, 'd_ff': 512, 'dropout': 0.2, 'attn': 'prob', 'distil': True}
+[2025-10-05 14:12:10,025][root][INFO] - Trainer initialized with device=cpu
+[2025-10-05 14:12:10,026][root][INFO] - Building Informer datasets with input_len=96, output_len=5, label_len=64, use_time_feats=True
+[2025-10-05 14:12:10,026][root][INFO] - Trainer initialized with device=cpu
+[2025-10-05 14:12:10,026][root][INFO] - Building Informer datasets with input_len=96, output_len=5, label_len=64, use_time_feats=True
+[2025-10-05 14:12:10,841][root][INFO] - WindowDataset created: Xw shape=(1817, 96, 1671), Yw shape=(1817, 5, 424), invalid_windows: 0
+[2025-10-05 14:12:10,880][root][INFO] - WindowDataset created: Xw shape=(1817, 96, 1671), Yw shape=(1817, 5, 424), invalid_windows: 0
+[2025-10-05 14:12:17,179][root][INFO] - InformerWindowDataset created: Xw shape=(1817, 96, 1671), x_dec shape=(1817, 69, 424), Yw shape=(1817, 5, 424), mark_enc shape=(1817, 96, 256), invalid_windows=0
+[2025-10-05 14:12:17,186][root][INFO] - Informer dataset created: X_enc shape=(1817, 96, 1671), x_dec shape=(1817, 69, 424), Y shape=(1817, 5, 424), mark_enc shape=(1817, 96, 256)
+[2025-10-05 14:12:17,225][root][INFO] - InformerWindowDataset created: Xw shape=(1817, 96, 1671), x_dec shape=(1817, 69, 424), Yw shape=(1817, 5, 424), mark_enc shape=(1817, 96, 256), invalid_windows=0
+[2025-10-05 14:12:17,242][root][INFO] - Informer dataset created: X_enc shape=(1817, 96, 1671), x_dec shape=(1817, 69, 424), Y shape=(1817, 5, 424), mark_enc shape=(1817, 96, 256)
+[2025-10-05 14:12:17,848][root][INFO] - Informer DataLoaders created: train=1364, val=272, test=181
+[2025-10-05 14:12:17,887][root][INFO] - Informer DataLoaders created: train=1364, val=272, test=181
+[2025-10-05 14:12:38,829][root][INFO] - Epoch 0: train_loss=0.073360, val_loss=0.004234
+[2025-10-05 14:12:39,181][root][INFO] - Epoch 0: train_loss=0.072127, val_loss=0.003957
+[2025-10-05 14:12:58,588][root][INFO] - Epoch 1: train_loss=0.019149, val_loss=0.003076
+[2025-10-05 14:12:59,227][root][INFO] - Epoch 1: train_loss=0.018447, val_loss=0.002915
+[2025-10-05 14:13:20,753][root][INFO] - Epoch 2: train_loss=0.016283, val_loss=0.002346
+[2025-10-05 14:13:21,334][root][INFO] - Epoch 2: train_loss=0.015823, val_loss=0.002311
+[2025-10-05 14:13:41,049][root][INFO] - Epoch 3: train_loss=0.014714, val_loss=0.002052
+[2025-10-05 14:13:41,585][root][INFO] - Epoch 3: train_loss=0.014247, val_loss=0.002010
+[2025-10-05 14:14:01,791][root][INFO] - Epoch 4: train_loss=0.013516, val_loss=0.001773
+[2025-10-05 14:14:02,314][root][INFO] - Epoch 4: train_loss=0.013055, val_loss=0.001751
+[2025-10-05 14:14:22,485][root][INFO] - Epoch 5: train_loss=0.012448, val_loss=0.001572
+[2025-10-05 14:14:22,875][root][INFO] - Epoch 5: train_loss=0.011873, val_loss=0.001642
+[2025-10-05 14:14:42,690][root][INFO] - Epoch 6: train_loss=0.011428, val_loss=0.001530
+[2025-10-05 14:14:42,999][root][INFO] - Epoch 6: train_loss=0.010916, val_loss=0.001493
+[2025-10-05 14:15:02,903][root][INFO] - Epoch 7: train_loss=0.010492, val_loss=0.001419
+[2025-10-05 14:15:03,474][root][INFO] - Epoch 7: train_loss=0.009905, val_loss=0.001425
+[2025-10-05 14:15:23,032][root][INFO] - Epoch 8: train_loss=0.009532, val_loss=0.001338
+[2025-10-05 14:15:23,790][root][INFO] - Epoch 8: train_loss=0.008976, val_loss=0.001310
+[2025-10-05 14:15:43,313][root][INFO] - Epoch 9: train_loss=0.008561, val_loss=0.001253
+[2025-10-05 14:15:44,356][root][INFO] - Epoch 9: train_loss=0.008052, val_loss=0.001251
+[2025-10-05 14:16:04,795][root][INFO] - Epoch 10: train_loss=0.007580, val_loss=0.001208
+[2025-10-05 14:16:05,791][root][INFO] - Epoch 10: train_loss=0.007077, val_loss=0.001214
+[2025-10-05 14:16:24,514][root][INFO] - Epoch 11: train_loss=0.006586, val_loss=0.001151
+[2025-10-05 14:16:25,322][root][INFO] - Epoch 11: train_loss=0.006033, val_loss=0.001157
+[2025-10-05 14:16:45,664][root][INFO] - Epoch 12: train_loss=0.005597, val_loss=0.001139
+[2025-10-05 14:16:46,712][root][INFO] - Epoch 12: train_loss=0.004949, val_loss=0.001110
+[2025-10-05 14:17:05,835][root][INFO] - Epoch 13: train_loss=0.004681, val_loss=0.001085
+[2025-10-05 14:17:06,790][root][INFO] - Epoch 13: train_loss=0.003966, val_loss=0.001058
+[2025-10-05 14:17:25,068][root][INFO] - Epoch 14: train_loss=0.003897, val_loss=0.001073
+[2025-10-05 14:17:26,064][root][INFO] - Epoch 14: train_loss=0.003178, val_loss=0.001039
+[2025-10-05 14:17:44,496][root][INFO] - Epoch 15: train_loss=0.003286, val_loss=0.001060
+[2025-10-05 14:17:45,290][root][INFO] - Epoch 15: train_loss=0.002602, val_loss=0.001022
+[2025-10-05 14:18:03,509][root][INFO] - Epoch 16: train_loss=0.002832, val_loss=0.001034
+[2025-10-05 14:18:04,761][root][INFO] - Epoch 16: train_loss=0.002240, val_loss=0.001017
+[2025-10-05 14:18:23,206][root][INFO] - Epoch 17: train_loss=0.002499, val_loss=0.001022
+[2025-10-05 14:18:24,281][root][INFO] - Epoch 17: train_loss=0.001973, val_loss=0.001000
+[2025-10-05 14:18:43,604][root][INFO] - Epoch 18: train_loss=0.002267, val_loss=0.001008
+[2025-10-05 14:18:44,729][root][INFO] - Epoch 18: train_loss=0.001778, val_loss=0.000988
+[2025-10-05 14:19:03,795][root][INFO] - Epoch 19: train_loss=0.002073, val_loss=0.001002
+[2025-10-05 14:19:04,598][root][INFO] - Epoch 19: train_loss=0.001658, val_loss=0.000981
+[2025-10-05 14:19:24,340][root][INFO] - Epoch 20: train_loss=0.001933, val_loss=0.000989
+[2025-10-05 14:19:24,705][root][INFO] - Epoch 20: train_loss=0.001564, val_loss=0.000981
+[2025-10-05 14:19:44,305][root][INFO] - Epoch 21: train_loss=0.001822, val_loss=0.000988
+[2025-10-05 14:19:44,901][root][INFO] - Epoch 21: train_loss=0.001492, val_loss=0.000974
+[2025-10-05 14:20:04,151][root][INFO] - Epoch 22: train_loss=0.001733, val_loss=0.000981
+[2025-10-05 14:20:04,821][root][INFO] - Epoch 22: train_loss=0.001434, val_loss=0.001000
+[2025-10-05 14:20:24,266][root][INFO] - Epoch 23: train_loss=0.001654, val_loss=0.000977
+[2025-10-05 14:20:25,144][root][INFO] - Epoch 23: train_loss=0.001378, val_loss=0.000973
+[2025-10-05 14:20:45,013][root][INFO] - Epoch 24: train_loss=0.001606, val_loss=0.000981
+[2025-10-05 14:20:45,285][root][INFO] - Saved best model to ../checkpoints/INF_trial25_trial25_0.000977.pt
+[2025-10-05 14:20:45,643][root][INFO] - GPU Memory: 1.06 GB used out of 8.00 GB
+[2025-10-05 14:20:45,922][root][INFO] - Performed memory cleaning.
+[2025-10-05 14:20:46,272][root][INFO] - Epoch 24: train_loss=0.001323, val_loss=0.000966
+[2025-10-05 14:20:46,477][root][INFO] - Saved best model to ../checkpoints/INF_trial24_trial24_0.000966.pt
+[2025-10-05 14:20:46,728][root][INFO] - GPU Memory: 1.06 GB used out of 8.00 GB
+[2025-10-05 14:20:47,005][root][INFO] - Performed memory cleaning.
+[2025-10-05 14:20:47,047][root][INFO] - Best trial for INF: 22, value: 0.0009645898484022302, params: {'input_len': 96, 'label_len': 64, 'hidden_size': 384, 'e_layers': 3, 'd_layers': 2, 'n_heads': 8, 'd_ff': 768, 'dropout': 0.2, 'batch_size': 16, 'lr': 8.670558553866861e-05, 'optimizer': 'AdamW', 'lr_policy': 'clr'}

@@ -1,0 +1,87 @@
+[2025-10-05 22:20:49,326][root][INFO] - Configuration: experiment:
+  data_path: ../data
+  checkpoint_dir: ../checkpoints
+  models:
+  - derits
+  row_fraction: 1.0
+  num_targets: 424
+  filter_features: false
+  optuna:
+    direction: minimize
+    n_trials: 2
+    n_jobs: 2
+model:
+  model_type: default
+  model_class: default
+  trainer_class: default
+  params:
+    input_size: 1672
+    output_size: 424
+    input_len: 64
+    output_len: 5
+    batch_size: 16
+    hidden_size: 128
+    num_layers: 2
+    dropout: 0.1
+    epochs: 10
+    patience: 5
+    channels: 64
+    blocks: 3
+    kernel_size: 5
+    num_conv_layers: 2
+    tcn_kernel: 3
+    decom_kernel_size: 25
+    top_k_modes: 5
+    nhead: 8
+    dim_feedforward: 512
+    weight_decay: 0.001
+    scheduler_patience: 5
+    scheduler_factor: 0.5
+    clip_grad_norm: 1.0
+    partially_finite_target: false
+  lr: 0.001
+  optimizer: AdamW
+  lr_policy: constant
+
+[2025-10-05 22:20:49,328][root][INFO] - Set random seed to 42 for reproducibility.
+[2025-10-05 22:20:49,329][root][INFO] - CUDA version: 12.1
+[2025-10-05 22:20:49,371][root][INFO] - Device count: 1
+[2025-10-05 22:20:49,373][root][INFO] - Device name: NVIDIA GeForce RTX 4060 Laptop GPU
+[2025-10-05 22:20:49,471][root][INFO] - Loading train.csv from ../data/train.csv
+[2025-10-05 22:20:49,548][root][INFO] - Loading train_labels.csv from ../data/train_labels.csv
+[2025-10-05 22:20:49,667][root][INFO] - Loading target_pairs.csv from ../data/target_pairs.csv
+[2025-10-05 22:20:49,820][root][INFO] - X_full NaNs after imputation: 0
+[2025-10-05 22:20:49,820][root][INFO] - Y_full NaNs before imputation: 0
+[2025-10-05 22:20:49,821][root][INFO] - Y_full NaNs after imputation: 0
+[2025-10-05 22:20:49,821][root][INFO] - X_full feature count: 1671
+[2025-10-05 22:20:49,829][root][INFO] - Data loaded: X_full_np shape=(1917, 1671), Y_full_np shape=(1917, 424)
+[2025-10-05 22:20:49,829][root][INFO] - Raw data shapes: X=(1917, 1671), Y=(1917, 424)
+[2025-10-05 22:20:49,829][root][INFO] - Sample batch shapes: X=(64, 1671), Y=(64, 424)
+[2025-10-05 22:20:51,822][root][INFO] - WindowDataset created: Xw shape=(1657, 256, 1671), Yw shape=(1657, 5, 424), invalid_windows: 0
+[2025-10-05 22:20:51,823][root][INFO] - Trainer initialized with device=cuda
+[2025-10-05 22:20:54,564][root][INFO] - WindowDataset created: Xw shape=(1401, 512, 1671), Yw shape=(1401, 5, 424), invalid_windows: 0
+[2025-10-05 22:20:54,566][root][INFO] - Trainer initialized with device=cuda
+[2025-10-05 22:23:02,999][root][INFO] - Model: DERITS, Epoch 2/20: Train Loss=0.090523, Val Loss=0.085144
+[2025-10-05 22:28:26,931][root][INFO] - Model: DERITS, Epoch 3/20: Train Loss=0.072418, Val Loss=0.072080
+[2025-10-05 22:28:38,911][root][INFO] - Model: DERITS, Epoch 2/20: Train Loss=0.072703, Val Loss=0.065283
+[2025-10-05 22:34:49,640][root][INFO] - Model: DERITS, Epoch 4/20: Train Loss=0.059629, Val Loss=0.060958
+[2025-10-05 22:41:29,543][root][INFO] - Model: DERITS, Epoch 5/20: Train Loss=0.056100, Val Loss=0.061006
+[2025-10-05 22:42:01,418][root][INFO] - Model: DERITS, Epoch 3/20: Train Loss=0.068234, Val Loss=0.061863
+[2025-10-05 22:47:53,250][root][INFO] - Model: DERITS, Epoch 6/20: Train Loss=0.064477, Val Loss=0.063683
+[2025-10-05 22:54:14,413][root][INFO] - Model: DERITS, Epoch 7/20: Train Loss=0.073424, Val Loss=0.062380
+[2025-10-05 22:54:59,220][root][INFO] - Model: DERITS, Epoch 4/20: Train Loss=0.089997, Val Loss=0.099458
+[2025-10-05 23:00:22,000][root][INFO] - Model: DERITS, Epoch 8/20: Train Loss=0.055436, Val Loss=0.059364
+[2025-10-05 23:07:36,024][root][INFO] - Model: DERITS, Epoch 9/20: Train Loss=0.046360, Val Loss=0.055266
+[2025-10-05 23:08:23,570][root][INFO] - Model: DERITS, Epoch 5/20: Train Loss=0.081688, Val Loss=0.077813
+[2025-10-05 23:13:30,109][root][INFO] - Model: DERITS, Epoch 10/20: Train Loss=0.047673, Val Loss=0.059983
+[2025-10-05 23:21:04,656][root][INFO] - Model: DERITS, Epoch 11/20: Train Loss=0.057927, Val Loss=0.051444
+[2025-10-05 23:22:06,763][root][INFO] - Model: DERITS, Epoch 6/20: Train Loss=0.074447, Val Loss=0.064185
+[2025-10-05 23:27:03,200][root][INFO] - Model: DERITS, Epoch 12/20: Train Loss=0.044080, Val Loss=0.044730
+[2025-10-05 23:34:30,909][root][INFO] - Model: DERITS, Epoch 13/20: Train Loss=0.042297, Val Loss=0.042503
+[2025-10-05 23:35:36,371][root][INFO] - Model: DERITS, Epoch 7/20: Train Loss=0.075008, Val Loss=0.070824
+[2025-10-05 23:40:12,839][root][INFO] - Model: DERITS, Epoch 14/20: Train Loss=0.037259, Val Loss=0.039348
+[2025-10-05 23:47:49,471][root][INFO] - Model: DERITS, Epoch 15/20: Train Loss=0.039389, Val Loss=0.039229
+[2025-10-05 23:48:55,754][root][INFO] - Model: DERITS, Epoch 8/20: Train Loss=0.067418, Val Loss=0.068458
+[2025-10-05 23:53:28,176][root][INFO] - Model: DERITS, Epoch 16/20: Train Loss=0.031112, Val Loss=0.035107
+[2025-10-06 00:00:43,343][root][INFO] - Model: DERITS, Epoch 17/20: Train Loss=0.028444, Val Loss=0.034056
+[2025-10-06 00:01:52,895][root][INFO] - Model: DERITS, Epoch 9/20: Train Loss=0.063956, Val Loss=0.057626

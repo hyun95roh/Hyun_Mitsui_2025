@@ -1,0 +1,109 @@
+[2025-10-05 06:21:19,944][root][INFO] - Configuration: experiment:
+  data_path: ../data
+  checkpoint_dir: ../checkpoints
+  models:
+  - 'inf'
+  row_fraction: 1.0
+  num_targets: 424
+  filter_features: false
+  optuna:
+    direction: minimize
+    n_trials: 2
+    n_jobs: 2
+model:
+  model_type: default
+  model_class: default
+  trainer_class: default
+  params:
+    input_size: 1672
+    output_size: 424
+    input_len: 64
+    output_len: 5
+    batch_size: 16
+    hidden_size: 128
+    num_layers: 2
+    dropout: 0.1
+    epochs: 10
+    patience: 5
+    channels: 64
+    blocks: 3
+    kernel_size: 5
+    num_conv_layers: 2
+    tcn_kernel: 3
+    decom_kernel_size: 25
+    top_k_modes: 5
+    nhead: 8
+    dim_feedforward: 512
+    weight_decay: 0.001
+    scheduler_patience: 5
+    scheduler_factor: 0.5
+    clip_grad_norm: 1.0
+    partially_finite_target: false
+  lr: 0.001
+  optimizer: AdamW
+  lr_policy: constant
+
+[2025-10-05 06:21:19,949][root][INFO] - Set random seed to 42 for reproducibility.
+[2025-10-05 06:21:19,950][root][INFO] - CUDA version: 12.1
+[2025-10-05 06:21:19,987][root][INFO] - Device count: 1
+[2025-10-05 06:21:19,992][root][INFO] - Device name: NVIDIA GeForce RTX 4060 Laptop GPU
+[2025-10-05 06:21:20,092][root][INFO] - Loading train.csv from ../data/train.csv
+[2025-10-05 06:21:20,181][root][INFO] - Loading train_labels.csv from ../data/train_labels.csv
+[2025-10-05 06:21:20,302][root][INFO] - Loading target_pairs.csv from ../data/target_pairs.csv
+[2025-10-05 06:21:20,464][root][INFO] - X_full NaNs after imputation: 0
+[2025-10-05 06:21:20,464][root][INFO] - Y_full NaNs before imputation: 0
+[2025-10-05 06:21:20,466][root][INFO] - Y_full NaNs after imputation: 0
+[2025-10-05 06:21:20,466][root][INFO] - X_full feature count: 1671
+[2025-10-05 06:21:20,474][root][INFO] - Data loaded: X_full_np shape=(1917, 1671), Y_full_np shape=(1917, 424)
+[2025-10-05 06:21:20,474][root][INFO] - Raw data shapes: X=(1917, 1671), Y=(1917, 424)
+[2025-10-05 06:21:20,474][root][INFO] - Sample batch shapes: X=(64, 1671), Y=(64, 424)
+[2025-10-05 06:21:21,213][root][INFO] - Trial 15 started with params: {'input_size': 1671, 'output_size': 424, 'output_len': 5, 'input_len': 96, 'label_len': 32, 'hidden_size': 512, 'num_layers': 3, 'd_layers': 2, 'nhead': 8, 'dim_feedforward': 1024, 'dropout': 0.05, 'batch_size': 16, 'attn': 'prob', 'distil': True}, lr=2.6608529843034346e-05, optimizer=Adam, lr_policy=constant
+[2025-10-05 06:21:21,474][root][INFO] - Performed memory cleaning.
+[2025-10-05 06:21:21,495][root][INFO] - Trial 14 started with params: {'input_size': 1671, 'output_size': 424, 'output_len': 5, 'input_len': 96, 'label_len': 32, 'hidden_size': 512, 'num_layers': 3, 'd_layers': 2, 'nhead': 8, 'dim_feedforward': 1024, 'dropout': 0.05, 'batch_size': 16, 'attn': 'prob', 'distil': True}, lr=2.841072721848445e-05, optimizer=AdamW, lr_policy=constant
+[2025-10-05 06:21:21,774][root][INFO] - GPU Memory: 1.06 GB used out of 8.00 GB
+[2025-10-05 06:21:21,775][root][INFO] - Performed memory cleaning.
+[2025-10-05 06:21:21,775][root][INFO] - GPU Memory: 1.06 GB used out of 8.00 GB
+[2025-10-05 06:21:21,780][root][INFO] - Trial 15: X_raw shape=(1917, 1671), Y_raw shape=(1917, 424), NaNs X=0, Y=0
+[2025-10-05 06:21:21,780][root][INFO] - Trial 14: X_raw shape=(1917, 1671), Y_raw shape=(1917, 424), NaNs X=0, Y=0
+[2025-10-05 06:21:21,780][root][INFO] - Building Informer datasets with input_len=96, output_len=5, label_len=32, use_time_feats=True
+[2025-10-05 06:21:21,780][root][INFO] - Building Informer datasets with input_len=96, output_len=5, label_len=32, use_time_feats=True
+[2025-10-05 06:21:22,439][root][INFO] - WindowDataset created: Xw shape=(1817, 96, 1671), Yw shape=(1817, 5, 424), invalid_windows: 0
+[2025-10-05 06:21:22,462][root][INFO] - WindowDataset created: Xw shape=(1817, 96, 1671), Yw shape=(1817, 5, 424), invalid_windows: 0
+[2025-10-05 06:21:28,058][root][INFO] - InformerWindowDataset created: Xw shape=(1817, 96, 1671), x_dec shape=(1817, 37, 424), Yw shape=(1817, 5, 424), mark_enc shape=(1817, 96, 512), invalid_windows=0
+[2025-10-05 06:21:28,079][root][INFO] - Informer dataset created: X_enc shape=(1817, 96, 1671), x_dec shape=(1817, 37, 424), Y shape=(1817, 5, 424), mark_enc shape=(1817, 96, 512)
+[2025-10-05 06:21:28,095][root][INFO] - InformerWindowDataset created: Xw shape=(1817, 96, 1671), x_dec shape=(1817, 37, 424), Yw shape=(1817, 5, 424), mark_enc shape=(1817, 96, 512), invalid_windows=0
+[2025-10-05 06:21:28,095][root][INFO] - Informer dataset created: X_enc shape=(1817, 96, 1671), x_dec shape=(1817, 37, 424), Y shape=(1817, 5, 424), mark_enc shape=(1817, 96, 512)
+[2025-10-05 06:21:28,653][root][INFO] - Informer DataLoaders created: train=1364, val=272, test=181
+[2025-10-05 06:21:28,653][root][INFO] - Informer DataLoaders created: train=1364, val=272, test=181
+[2025-10-05 06:21:28,654][root][INFO] - Trial 15: Creating InTrainer with device=cuda
+[2025-10-05 06:21:28,654][root][INFO] - Trial 14: Creating InTrainer with device=cuda
+[2025-10-05 06:21:28,654][root][INFO] - InTrainer initialized with model_kwargs: {'input_size': 1671, 'enc_in': 1671, 'dec_in': 424, 'c_out': 424, 'seq_len': 96, 'label_len': 32, 'out_len': 5, 'd_model': 512, 'n_heads': 8, 'e_layers': 3, 'd_layers': 2, 'd_ff': 1024, 'dropout': 0.05, 'attn': 'prob', 'embed': 'fixed', 'freq': 'd', 'activation': 'gelu', 'distil': True, 'device': 'cuda'}
+[2025-10-05 06:21:28,654][root][INFO] - InTrainer initialized with model_kwargs: {'input_size': 1671, 'enc_in': 1671, 'dec_in': 424, 'c_out': 424, 'seq_len': 96, 'label_len': 32, 'out_len': 5, 'd_model': 512, 'n_heads': 8, 'e_layers': 3, 'd_layers': 2, 'd_ff': 1024, 'dropout': 0.05, 'attn': 'prob', 'embed': 'fixed', 'freq': 'd', 'activation': 'gelu', 'distil': True, 'device': 'cuda'}
+[2025-10-05 06:21:29,039][root][INFO] - Trainer initialized with device=cpu
+[2025-10-05 06:21:29,042][root][INFO] - Trainer initialized with device=cpu
+[2025-10-05 06:21:29,426][root][ERROR] - Trial 15 failed: pred torch.Size([80, 5, 424]) vs y torch.Size([16, 5, 424])
+Traceback (most recent call last):
+  File "/root/vscode/portfolio/mitsui_2025/src/study.py", line 202, in objective_informer
+    val_loss = trainer.train(train_loader=train_loader, val_loader=val_loader)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/root/vscode/portfolio/mitsui_2025/src/trainer.py", line 682, in train
+    assert y.shape == (B, T, C), f"pred {pred.shape} vs y {y.shape}"
+           ^^^^^^^^^^^^^^^^^^^^
+AssertionError: pred torch.Size([80, 5, 424]) vs y torch.Size([16, 5, 424])
+
+[2025-10-05 06:21:29,428][root][ERROR] - Trial 14 failed: pred torch.Size([80, 5, 424]) vs y torch.Size([16, 5, 424])
+Traceback (most recent call last):
+  File "/root/vscode/portfolio/mitsui_2025/src/study.py", line 202, in objective_informer
+    val_loss = trainer.train(train_loader=train_loader, val_loader=val_loader)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/root/vscode/portfolio/mitsui_2025/src/trainer.py", line 682, in train
+    assert y.shape == (B, T, C), f"pred {pred.shape} vs y {y.shape}"
+           ^^^^^^^^^^^^^^^^^^^^
+AssertionError: pred torch.Size([80, 5, 424]) vs y torch.Size([16, 5, 424])
+
+[2025-10-05 06:21:30,001][root][INFO] - GPU Memory: 1.06 GB used out of 8.00 GB
+[2025-10-05 06:21:30,002][root][INFO] - GPU Memory: 1.06 GB used out of 8.00 GB
+[2025-10-05 06:21:30,275][root][INFO] - Performed memory cleaning.
+[2025-10-05 06:21:30,540][root][INFO] - Performed memory cleaning.
+[2025-10-05 06:21:30,585][root][WARNING] - No completed trials for INF. All trials were pruned or failed. Trials: 16
+[2025-10-05 06:21:30,587][root][INFO] - Trial states: [2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2]

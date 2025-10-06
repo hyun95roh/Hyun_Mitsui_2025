@@ -1,0 +1,63 @@
+[2025-10-05 20:48:43,989][root][INFO] - Configuration: experiment:
+  data_path: ../data
+  checkpoint_dir: ../checkpoints
+  models:
+  - derits
+  row_fraction: 1.0
+  num_targets: 424
+  filter_features: false
+  optuna:
+    direction: minimize
+    n_trials: 2
+    n_jobs: 2
+model:
+  model_type: default
+  model_class: default
+  trainer_class: default
+  params:
+    input_size: 1672
+    output_size: 424
+    input_len: 64
+    output_len: 5
+    batch_size: 16
+    hidden_size: 128
+    num_layers: 2
+    dropout: 0.1
+    epochs: 10
+    patience: 5
+    channels: 64
+    blocks: 3
+    kernel_size: 5
+    num_conv_layers: 2
+    tcn_kernel: 3
+    decom_kernel_size: 25
+    top_k_modes: 5
+    nhead: 8
+    dim_feedforward: 512
+    weight_decay: 0.001
+    scheduler_patience: 5
+    scheduler_factor: 0.5
+    clip_grad_norm: 1.0
+    partially_finite_target: false
+  lr: 0.001
+  optimizer: AdamW
+  lr_policy: constant
+
+[2025-10-05 20:48:43,991][root][INFO] - Set random seed to 42 for reproducibility.
+[2025-10-05 20:48:43,991][root][INFO] - CUDA version: 12.1
+[2025-10-05 20:48:44,028][root][INFO] - Device count: 1
+[2025-10-05 20:48:44,029][root][INFO] - Device name: NVIDIA GeForce RTX 4060 Laptop GPU
+[2025-10-05 20:48:44,138][root][INFO] - Loading train.csv from ../data/train.csv
+[2025-10-05 20:48:44,216][root][INFO] - Loading train_labels.csv from ../data/train_labels.csv
+[2025-10-05 20:48:44,319][root][INFO] - Loading target_pairs.csv from ../data/target_pairs.csv
+[2025-10-05 20:48:44,471][root][INFO] - X_full NaNs after imputation: 0
+[2025-10-05 20:48:44,472][root][INFO] - Y_full NaNs before imputation: 0
+[2025-10-05 20:48:44,474][root][INFO] - Y_full NaNs after imputation: 0
+[2025-10-05 20:48:44,474][root][INFO] - X_full feature count: 1671
+[2025-10-05 20:48:44,482][root][INFO] - Data loaded: X_full_np shape=(1917, 1671), Y_full_np shape=(1917, 424)
+[2025-10-05 20:48:44,483][root][INFO] - Raw data shapes: X=(1917, 1671), Y=(1917, 424)
+[2025-10-05 20:48:44,483][root][INFO] - Sample batch shapes: X=(64, 1671), Y=(64, 424)
+[2025-10-05 20:48:45,965][root][INFO] - WindowDataset created: Xw shape=(1785, 128, 1671), Yw shape=(1785, 5, 424), invalid_windows: 0
+[2025-10-05 20:48:47,249][root][INFO] - WindowDataset created: Xw shape=(1657, 256, 1671), Yw shape=(1657, 5, 424), invalid_windows: 0
+[2025-10-05 20:48:48,253][root][WARNING] - No completed trials for DERITS. All trials were pruned or failed. Trials: 2
+[2025-10-05 20:48:48,313][root][INFO] - Trial states: [3, 3]

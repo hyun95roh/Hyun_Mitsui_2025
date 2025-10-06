@@ -1,0 +1,390 @@
+[2025-10-05 21:46:20,230][root][INFO] - Configuration: experiment:
+  data_path: ../data
+  checkpoint_dir: ../checkpoints
+  models:
+  - derits
+  row_fraction: 1.0
+  num_targets: 424
+  filter_features: false
+  optuna:
+    direction: minimize
+    n_trials: 2
+    n_jobs: 2
+model:
+  model_type: default
+  model_class: default
+  trainer_class: default
+  params:
+    input_size: 1672
+    output_size: 424
+    input_len: 64
+    output_len: 5
+    batch_size: 16
+    hidden_size: 128
+    num_layers: 2
+    dropout: 0.1
+    epochs: 10
+    patience: 5
+    channels: 64
+    blocks: 3
+    kernel_size: 5
+    num_conv_layers: 2
+    tcn_kernel: 3
+    decom_kernel_size: 25
+    top_k_modes: 5
+    nhead: 8
+    dim_feedforward: 512
+    weight_decay: 0.001
+    scheduler_patience: 5
+    scheduler_factor: 0.5
+    clip_grad_norm: 1.0
+    partially_finite_target: false
+  lr: 0.001
+  optimizer: AdamW
+  lr_policy: constant
+
+[2025-10-05 21:46:20,231][root][INFO] - Set random seed to 42 for reproducibility.
+[2025-10-05 21:46:20,231][root][INFO] - CUDA version: 12.1
+[2025-10-05 21:46:20,269][root][INFO] - Device count: 1
+[2025-10-05 21:46:20,270][root][INFO] - Device name: NVIDIA GeForce RTX 4060 Laptop GPU
+[2025-10-05 21:46:20,362][root][INFO] - Loading train.csv from ../data/train.csv
+[2025-10-05 21:46:20,438][root][INFO] - Loading train_labels.csv from ../data/train_labels.csv
+[2025-10-05 21:46:20,547][root][INFO] - Loading target_pairs.csv from ../data/target_pairs.csv
+[2025-10-05 21:46:20,678][root][INFO] - X_full NaNs after imputation: 0
+[2025-10-05 21:46:20,678][root][INFO] - Y_full NaNs before imputation: 0
+[2025-10-05 21:46:20,680][root][INFO] - Y_full NaNs after imputation: 0
+[2025-10-05 21:46:20,680][root][INFO] - X_full feature count: 1671
+[2025-10-05 21:46:20,687][root][INFO] - Data loaded: X_full_np shape=(1917, 1671), Y_full_np shape=(1917, 424)
+[2025-10-05 21:46:20,688][root][INFO] - Raw data shapes: X=(1917, 1671), Y=(1917, 424)
+[2025-10-05 21:46:20,688][root][INFO] - Sample batch shapes: X=(64, 1671), Y=(64, 424)
+[2025-10-05 21:46:21,907][root][INFO] - WindowDataset created: Xw shape=(1785, 128, 1671), Yw shape=(1785, 5, 424), invalid_windows: 0
+[2025-10-05 21:46:21,990][root][INFO] - WindowDataset created: Xw shape=(1785, 128, 1671), Yw shape=(1785, 5, 424), invalid_windows: 0
+[2025-10-05 21:46:23,913][root][WARNING] - Non-finite loss encountered; skipping batch.
+[2025-10-05 21:46:23,915][root][WARNING] - Non-finite loss encountered; skipping batch.
+[2025-10-05 21:46:24,132][root][WARNING] - Non-finite loss encountered; skipping batch.
+[2025-10-05 21:46:24,132][root][WARNING] - Non-finite loss encountered; skipping batch.
+[2025-10-05 21:46:24,337][root][WARNING] - Non-finite loss encountered; skipping batch.
+[2025-10-05 21:46:24,337][root][WARNING] - Non-finite loss encountered; skipping batch.
+[2025-10-05 21:46:24,494][root][WARNING] - Non-finite loss encountered; skipping batch.
+[2025-10-05 21:46:24,561][root][WARNING] - Non-finite loss encountered; skipping batch.
+[2025-10-05 21:46:24,685][root][WARNING] - Non-finite loss encountered; skipping batch.
+[2025-10-05 21:46:24,778][root][WARNING] - Non-finite loss encountered; skipping batch.
+[2025-10-05 21:46:24,848][root][WARNING] - Non-finite loss encountered; skipping batch.
+[2025-10-05 21:46:24,979][root][WARNING] - Non-finite loss encountered; skipping batch.
+[2025-10-05 21:46:25,049][root][WARNING] - Non-finite loss encountered; skipping batch.
+[2025-10-05 21:46:25,176][root][WARNING] - Non-finite loss encountered; skipping batch.
+[2025-10-05 21:46:25,240][root][WARNING] - Non-finite loss encountered; skipping batch.
+[2025-10-05 21:46:25,371][root][WARNING] - Non-finite loss encountered; skipping batch.
+[2025-10-05 21:46:25,439][root][WARNING] - Non-finite loss encountered; skipping batch.
+[2025-10-05 21:46:25,569][root][WARNING] - Non-finite loss encountered; skipping batch.
+[2025-10-05 21:46:25,606][root][WARNING] - Non-finite loss encountered; skipping batch.
+[2025-10-05 21:46:25,788][root][WARNING] - Non-finite loss encountered; skipping batch.
+[2025-10-05 21:46:25,796][root][WARNING] - Non-finite loss encountered; skipping batch.
+[2025-10-05 21:46:26,007][root][WARNING] - Non-finite loss encountered; skipping batch.
+[2025-10-05 21:46:26,008][root][WARNING] - Non-finite loss encountered; skipping batch.
+[2025-10-05 21:46:26,199][root][WARNING] - Non-finite loss encountered; skipping batch.
+[2025-10-05 21:46:26,229][root][WARNING] - Non-finite loss encountered; skipping batch.
+[2025-10-05 21:46:26,321][root][WARNING] - Non-finite loss encountered; skipping batch.
+[2025-10-05 21:46:26,449][root][WARNING] - Non-finite loss encountered; skipping batch.
+[2025-10-05 21:46:26,492][root][WARNING] - Non-finite loss encountered; skipping batch.
+[2025-10-05 21:46:26,667][root][WARNING] - Non-finite loss encountered; skipping batch.
+[2025-10-05 21:46:26,674][root][WARNING] - Non-finite loss encountered; skipping batch.
+[2025-10-05 21:46:26,881][root][WARNING] - Non-finite loss encountered; skipping batch.
+[2025-10-05 21:46:26,882][root][WARNING] - Non-finite loss encountered; skipping batch.
+[2025-10-05 21:46:27,075][root][WARNING] - Non-finite loss encountered; skipping batch.
+[2025-10-05 21:46:27,104][root][WARNING] - Non-finite loss encountered; skipping batch.
+[2025-10-05 21:46:27,197][root][WARNING] - Non-finite loss encountered; skipping batch.
+[2025-10-05 21:46:27,325][root][WARNING] - Non-finite loss encountered; skipping batch.
+[2025-10-05 21:46:27,377][root][WARNING] - Non-finite loss encountered; skipping batch.
+[2025-10-05 21:46:27,547][root][WARNING] - Non-finite loss encountered; skipping batch.
+[2025-10-05 21:46:27,585][root][WARNING] - Non-finite loss encountered; skipping batch.
+[2025-10-05 21:46:27,751][root][WARNING] - Non-finite loss encountered; skipping batch.
+[2025-10-05 21:46:27,759][root][WARNING] - Non-finite loss encountered; skipping batch.
+[2025-10-05 21:46:27,967][root][WARNING] - Non-finite loss encountered; skipping batch.
+[2025-10-05 21:46:27,967][root][WARNING] - Non-finite loss encountered; skipping batch.
+[2025-10-05 21:46:28,127][root][WARNING] - Non-finite loss encountered; skipping batch.
+[2025-10-05 21:46:28,192][root][WARNING] - Non-finite loss encountered; skipping batch.
+[2025-10-05 21:46:28,326][root][WARNING] - Non-finite loss encountered; skipping batch.
+[2025-10-05 21:46:28,394][root][WARNING] - Non-finite loss encountered; skipping batch.
+[2025-10-05 21:46:28,510][root][WARNING] - Non-finite loss encountered; skipping batch.
+[2025-10-05 21:46:28,604][root][WARNING] - Non-finite loss encountered; skipping batch.
+[2025-10-05 21:46:28,729][root][WARNING] - Non-finite loss encountered; skipping batch.
+[2025-10-05 21:46:28,796][root][WARNING] - Non-finite loss encountered; skipping batch.
+[2025-10-05 21:46:28,899][root][WARNING] - Non-finite loss encountered; skipping batch.
+[2025-10-05 21:46:29,016][root][WARNING] - Non-finite loss encountered; skipping batch.
+[2025-10-05 21:46:29,070][root][WARNING] - Non-finite loss encountered; skipping batch.
+[2025-10-05 21:46:29,239][root][WARNING] - Non-finite loss encountered; skipping batch.
+[2025-10-05 21:46:29,248][root][WARNING] - Non-finite loss encountered; skipping batch.
+[2025-10-05 21:46:29,456][root][WARNING] - Non-finite loss encountered; skipping batch.
+[2025-10-05 21:46:29,456][root][WARNING] - Non-finite loss encountered; skipping batch.
+[2025-10-05 21:46:29,662][root][WARNING] - Non-finite loss encountered; skipping batch.
+[2025-10-05 21:46:29,663][root][WARNING] - Non-finite loss encountered; skipping batch.
+[2025-10-05 21:46:29,852][root][WARNING] - Non-finite loss encountered; skipping batch.
+[2025-10-05 21:46:29,853][root][WARNING] - Non-finite loss encountered; skipping batch.
+[2025-10-05 21:46:30,049][root][WARNING] - Non-finite loss encountered; skipping batch.
+[2025-10-05 21:46:30,075][root][WARNING] - Non-finite loss encountered; skipping batch.
+[2025-10-05 21:46:30,211][root][WARNING] - Non-finite loss encountered; skipping batch.
+[2025-10-05 21:46:30,280][root][WARNING] - Non-finite loss encountered; skipping batch.
+[2025-10-05 21:46:30,378][root][WARNING] - Non-finite loss encountered; skipping batch.
+[2025-10-05 21:46:30,509][root][WARNING] - Non-finite loss encountered; skipping batch.
+[2025-10-05 21:46:30,563][root][WARNING] - Non-finite loss encountered; skipping batch.
+[2025-10-05 21:46:30,731][root][WARNING] - Non-finite loss encountered; skipping batch.
+[2025-10-05 21:46:30,738][root][WARNING] - Non-finite loss encountered; skipping batch.
+[2025-10-05 21:46:30,943][root][WARNING] - Non-finite loss encountered; skipping batch.
+[2025-10-05 21:46:30,943][root][WARNING] - Non-finite loss encountered; skipping batch.
+[2025-10-05 21:46:31,155][root][WARNING] - Non-finite loss encountered; skipping batch.
+[2025-10-05 21:46:31,157][root][WARNING] - Non-finite loss encountered; skipping batch.
+[2025-10-05 21:46:31,370][root][WARNING] - Non-finite loss encountered; skipping batch.
+[2025-10-05 21:46:31,373][root][WARNING] - Non-finite loss encountered; skipping batch.
+[2025-10-05 21:46:31,575][root][WARNING] - Non-finite loss encountered; skipping batch.
+[2025-10-05 21:46:31,575][root][WARNING] - Non-finite loss encountered; skipping batch.
+[2025-10-05 21:46:31,792][root][WARNING] - Non-finite loss encountered; skipping batch.
+[2025-10-05 21:46:31,792][root][WARNING] - Non-finite loss encountered; skipping batch.
+[2025-10-05 21:46:31,988][root][WARNING] - Non-finite loss encountered; skipping batch.
+[2025-10-05 21:46:32,013][root][WARNING] - Non-finite loss encountered; skipping batch.
+[2025-10-05 21:46:32,111][root][WARNING] - Non-finite loss encountered; skipping batch.
+[2025-10-05 21:46:32,239][root][WARNING] - Non-finite loss encountered; skipping batch.
+[2025-10-05 21:46:32,271][root][WARNING] - Non-finite loss encountered; skipping batch.
+[2025-10-05 21:46:32,458][root][WARNING] - Non-finite loss encountered; skipping batch.
+[2025-10-05 21:46:32,468][root][WARNING] - Non-finite loss encountered; skipping batch.
+[2025-10-05 21:46:32,671][root][WARNING] - Non-finite loss encountered; skipping batch.
+[2025-10-05 21:46:32,672][root][WARNING] - Non-finite loss encountered; skipping batch.
+[2025-10-05 21:46:32,826][root][WARNING] - Non-finite loss encountered; skipping batch.
+[2025-10-05 21:46:32,892][root][WARNING] - Non-finite loss encountered; skipping batch.
+[2025-10-05 21:46:33,022][root][WARNING] - Non-finite loss encountered; skipping batch.
+[2025-10-05 21:46:33,125][root][WARNING] - Non-finite loss encountered; skipping batch.
+[2025-10-05 21:46:33,169][root][WARNING] - Non-finite loss encountered; skipping batch.
+[2025-10-05 21:46:33,351][root][WARNING] - Non-finite loss encountered; skipping batch.
+[2025-10-05 21:46:33,358][root][WARNING] - Non-finite loss encountered; skipping batch.
+[2025-10-05 21:46:33,566][root][WARNING] - Non-finite loss encountered; skipping batch.
+[2025-10-05 21:46:33,566][root][WARNING] - Non-finite loss encountered; skipping batch.
+[2025-10-05 21:46:33,774][root][WARNING] - Non-finite loss encountered; skipping batch.
+[2025-10-05 21:46:33,775][root][WARNING] - Non-finite loss encountered; skipping batch.
+[2025-10-05 21:46:33,985][root][WARNING] - Non-finite loss encountered; skipping batch.
+[2025-10-05 21:46:33,986][root][WARNING] - Non-finite loss encountered; skipping batch.
+[2025-10-05 21:46:34,204][root][WARNING] - Non-finite loss encountered; skipping batch.
+[2025-10-05 21:46:34,205][root][WARNING] - Non-finite loss encountered; skipping batch.
+[2025-10-05 21:46:34,419][root][WARNING] - Non-finite loss encountered; skipping batch.
+[2025-10-05 21:46:34,420][root][WARNING] - Non-finite loss encountered; skipping batch.
+[2025-10-05 21:46:34,633][root][WARNING] - Non-finite loss encountered; skipping batch.
+[2025-10-05 21:46:34,634][root][WARNING] - Non-finite loss encountered; skipping batch.
+[2025-10-05 21:46:34,845][root][WARNING] - Non-finite loss encountered; skipping batch.
+[2025-10-05 21:46:34,845][root][WARNING] - Non-finite loss encountered; skipping batch.
+[2025-10-05 21:46:35,057][root][WARNING] - Non-finite loss encountered; skipping batch.
+[2025-10-05 21:46:35,057][root][WARNING] - Non-finite loss encountered; skipping batch.
+[2025-10-05 21:46:35,269][root][WARNING] - Non-finite loss encountered; skipping batch.
+[2025-10-05 21:46:35,269][root][WARNING] - Non-finite loss encountered; skipping batch.
+[2025-10-05 21:46:35,462][root][WARNING] - Non-finite loss encountered; skipping batch.
+[2025-10-05 21:46:35,491][root][WARNING] - Non-finite loss encountered; skipping batch.
+[2025-10-05 21:46:35,586][root][WARNING] - Non-finite loss encountered; skipping batch.
+[2025-10-05 21:46:35,720][root][WARNING] - Non-finite loss encountered; skipping batch.
+[2025-10-05 21:46:35,760][root][WARNING] - Non-finite loss encountered; skipping batch.
+[2025-10-05 21:46:35,945][root][WARNING] - Non-finite loss encountered; skipping batch.
+[2025-10-05 21:46:35,951][root][WARNING] - Non-finite loss encountered; skipping batch.
+[2025-10-05 21:46:36,159][root][WARNING] - Non-finite loss encountered; skipping batch.
+[2025-10-05 21:46:36,159][root][WARNING] - Non-finite loss encountered; skipping batch.
+[2025-10-05 21:46:36,370][root][WARNING] - Non-finite loss encountered; skipping batch.
+[2025-10-05 21:46:36,371][root][WARNING] - Non-finite loss encountered; skipping batch.
+[2025-10-05 21:46:36,514][root][WARNING] - Non-finite loss encountered; skipping batch.
+[2025-10-05 21:46:36,515][root][WARNING] - Non-finite loss encountered; skipping batch.
+[2025-10-05 21:46:36,583][root][WARNING] - Non-finite loss encountered; skipping batch.
+[2025-10-05 21:46:36,652][root][WARNING] - Non-finite loss encountered; skipping batch.
+[2025-10-05 21:46:36,723][root][WARNING] - Non-finite loss encountered; skipping batch.
+[2025-10-05 21:46:36,792][root][WARNING] - Non-finite loss encountered; skipping batch.
+[2025-10-05 21:46:36,861][root][WARNING] - Non-finite loss encountered; skipping batch.
+[2025-10-05 21:46:36,932][root][WARNING] - Non-finite loss encountered; skipping batch.
+[2025-10-05 21:46:36,997][root][WARNING] - Non-finite loss encountered; skipping batch.
+[2025-10-05 21:46:37,069][root][WARNING] - Non-finite loss encountered; skipping batch.
+[2025-10-05 21:46:37,132][root][WARNING] - Non-finite loss encountered; skipping batch.
+[2025-10-05 21:46:37,197][root][WARNING] - Non-finite loss encountered; skipping batch.
+[2025-10-05 21:46:37,266][root][WARNING] - Non-finite loss encountered; skipping batch.
+[2025-10-05 21:46:37,341][root][WARNING] - Non-finite loss encountered; skipping batch.
+[2025-10-05 21:46:37,406][root][WARNING] - Non-finite loss encountered; skipping batch.
+[2025-10-05 21:46:37,474][root][WARNING] - Non-finite loss encountered; skipping batch.
+[2025-10-05 21:46:37,543][root][WARNING] - Non-finite loss encountered; skipping batch.
+[2025-10-05 21:46:37,609][root][WARNING] - Non-finite loss encountered; skipping batch.
+[2025-10-05 21:46:37,677][root][WARNING] - Non-finite loss encountered; skipping batch.
+[2025-10-05 21:46:37,740][root][WARNING] - Non-finite loss encountered; skipping batch.
+[2025-10-05 21:46:37,808][root][WARNING] - Non-finite loss encountered; skipping batch.
+[2025-10-05 21:46:37,870][root][WARNING] - Non-finite loss encountered; skipping batch.
+[2025-10-05 21:46:37,933][root][WARNING] - Non-finite loss encountered; skipping batch.
+[2025-10-05 21:46:38,000][root][WARNING] - Non-finite loss encountered; skipping batch.
+[2025-10-05 21:46:38,068][root][WARNING] - Non-finite loss encountered; skipping batch.
+[2025-10-05 21:46:38,126][root][WARNING] - Non-finite loss encountered; skipping batch.
+[2025-10-05 21:46:38,186][root][WARNING] - Non-finite loss encountered; skipping batch.
+[2025-10-05 21:46:38,251][root][WARNING] - Non-finite loss encountered; skipping batch.
+[2025-10-05 21:46:38,318][root][WARNING] - Non-finite loss encountered; skipping batch.
+[2025-10-05 21:46:38,384][root][WARNING] - Non-finite loss encountered; skipping batch.
+[2025-10-05 21:46:38,453][root][WARNING] - Non-finite loss encountered; skipping batch.
+[2025-10-05 21:46:38,527][root][WARNING] - Non-finite loss encountered; skipping batch.
+[2025-10-05 21:46:38,588][root][WARNING] - Non-finite loss encountered; skipping batch.
+[2025-10-05 21:46:38,652][root][WARNING] - Non-finite loss encountered; skipping batch.
+[2025-10-05 21:46:38,713][root][WARNING] - Non-finite loss encountered; skipping batch.
+[2025-10-05 21:46:38,778][root][WARNING] - Non-finite loss encountered; skipping batch.
+[2025-10-05 21:46:38,842][root][WARNING] - Non-finite loss encountered; skipping batch.
+[2025-10-05 21:46:38,901][root][WARNING] - Non-finite loss encountered; skipping batch.
+[2025-10-05 21:46:38,961][root][WARNING] - Non-finite loss encountered; skipping batch.
+[2025-10-05 21:46:39,026][root][WARNING] - Non-finite loss encountered; skipping batch.
+[2025-10-05 21:46:39,090][root][WARNING] - Non-finite loss encountered; skipping batch.
+[2025-10-05 21:46:39,157][root][WARNING] - Non-finite loss encountered; skipping batch.
+[2025-10-05 21:46:39,227][root][WARNING] - Non-finite loss encountered; skipping batch.
+[2025-10-05 21:46:39,292][root][WARNING] - Non-finite loss encountered; skipping batch.
+[2025-10-05 21:46:39,365][root][WARNING] - Non-finite loss encountered; skipping batch.
+[2025-10-05 21:46:39,427][root][WARNING] - Non-finite loss encountered; skipping batch.
+[2025-10-05 21:46:39,495][root][WARNING] - Non-finite loss encountered; skipping batch.
+[2025-10-05 21:46:39,567][root][WARNING] - Non-finite loss encountered; skipping batch.
+[2025-10-05 21:46:39,633][root][WARNING] - Non-finite loss encountered; skipping batch.
+[2025-10-05 21:46:39,699][root][WARNING] - Non-finite loss encountered; skipping batch.
+[2025-10-05 21:46:39,768][root][WARNING] - Non-finite loss encountered; skipping batch.
+[2025-10-05 21:46:39,836][root][WARNING] - Non-finite loss encountered; skipping batch.
+[2025-10-05 21:46:39,903][root][WARNING] - Non-finite loss encountered; skipping batch.
+[2025-10-05 21:46:39,968][root][WARNING] - Non-finite loss encountered; skipping batch.
+[2025-10-05 21:46:40,038][root][WARNING] - Non-finite loss encountered; skipping batch.
+[2025-10-05 21:46:40,104][root][WARNING] - Non-finite loss encountered; skipping batch.
+[2025-10-05 21:46:40,176][root][WARNING] - Non-finite loss encountered; skipping batch.
+[2025-10-05 21:46:40,244][root][WARNING] - Non-finite loss encountered; skipping batch.
+[2025-10-05 21:46:40,313][root][WARNING] - Non-finite loss encountered; skipping batch.
+[2025-10-05 21:46:40,376][root][WARNING] - Non-finite loss encountered; skipping batch.
+[2025-10-05 21:46:40,437][root][WARNING] - Non-finite loss encountered; skipping batch.
+[2025-10-05 21:46:40,515][root][WARNING] - Non-finite loss encountered; skipping batch.
+[2025-10-05 21:46:40,589][root][WARNING] - Non-finite loss encountered; skipping batch.
+[2025-10-05 21:46:40,660][root][WARNING] - Non-finite loss encountered; skipping batch.
+[2025-10-05 21:46:40,731][root][WARNING] - Non-finite loss encountered; skipping batch.
+[2025-10-05 21:46:40,806][root][WARNING] - Non-finite loss encountered; skipping batch.
+[2025-10-05 21:46:40,874][root][WARNING] - Non-finite loss encountered; skipping batch.
+[2025-10-05 21:46:40,945][root][WARNING] - Non-finite loss encountered; skipping batch.
+[2025-10-05 21:46:41,014][root][WARNING] - Non-finite loss encountered; skipping batch.
+[2025-10-05 21:46:41,080][root][WARNING] - Non-finite loss encountered; skipping batch.
+[2025-10-05 21:46:41,151][root][WARNING] - Non-finite loss encountered; skipping batch.
+[2025-10-05 21:46:41,219][root][WARNING] - Non-finite loss encountered; skipping batch.
+[2025-10-05 21:46:41,286][root][WARNING] - Non-finite loss encountered; skipping batch.
+[2025-10-05 21:46:41,358][root][WARNING] - Non-finite loss encountered; skipping batch.
+[2025-10-05 21:46:41,421][root][WARNING] - Non-finite loss encountered; skipping batch.
+[2025-10-05 21:46:41,485][root][WARNING] - Non-finite loss encountered; skipping batch.
+[2025-10-05 21:46:41,559][root][WARNING] - Non-finite loss encountered; skipping batch.
+[2025-10-05 21:46:41,624][root][WARNING] - Non-finite loss encountered; skipping batch.
+[2025-10-05 21:46:41,687][root][WARNING] - Non-finite loss encountered; skipping batch.
+[2025-10-05 21:46:41,754][root][WARNING] - Non-finite loss encountered; skipping batch.
+[2025-10-05 21:46:41,819][root][WARNING] - Non-finite loss encountered; skipping batch.
+[2025-10-05 21:46:41,886][root][WARNING] - Non-finite loss encountered; skipping batch.
+[2025-10-05 21:46:41,953][root][WARNING] - Non-finite loss encountered; skipping batch.
+[2025-10-05 21:46:42,020][root][WARNING] - Non-finite loss encountered; skipping batch.
+[2025-10-05 21:46:42,083][root][WARNING] - Non-finite loss encountered; skipping batch.
+[2025-10-05 21:46:42,155][root][WARNING] - Non-finite loss encountered; skipping batch.
+[2025-10-05 21:46:42,225][root][WARNING] - Non-finite loss encountered; skipping batch.
+[2025-10-05 21:46:42,290][root][WARNING] - Non-finite loss encountered; skipping batch.
+[2025-10-05 21:46:42,359][root][WARNING] - Non-finite loss encountered; skipping batch.
+[2025-10-05 21:46:42,422][root][WARNING] - Non-finite loss encountered; skipping batch.
+[2025-10-05 21:46:42,485][root][WARNING] - Non-finite loss encountered; skipping batch.
+[2025-10-05 21:46:42,552][root][WARNING] - Non-finite loss encountered; skipping batch.
+[2025-10-05 21:46:42,618][root][WARNING] - Non-finite loss encountered; skipping batch.
+[2025-10-05 21:46:42,682][root][WARNING] - Non-finite loss encountered; skipping batch.
+[2025-10-05 21:46:42,749][root][WARNING] - Non-finite loss encountered; skipping batch.
+[2025-10-05 21:46:42,812][root][WARNING] - Non-finite loss encountered; skipping batch.
+[2025-10-05 21:46:42,878][root][WARNING] - Non-finite loss encountered; skipping batch.
+[2025-10-05 21:46:42,944][root][WARNING] - Non-finite loss encountered; skipping batch.
+[2025-10-05 21:46:43,008][root][WARNING] - Non-finite loss encountered; skipping batch.
+[2025-10-05 21:46:43,073][root][WARNING] - Non-finite loss encountered; skipping batch.
+[2025-10-05 21:46:43,138][root][WARNING] - Non-finite loss encountered; skipping batch.
+[2025-10-05 21:46:43,200][root][WARNING] - Non-finite loss encountered; skipping batch.
+[2025-10-05 21:46:43,264][root][WARNING] - Non-finite loss encountered; skipping batch.
+[2025-10-05 21:46:43,331][root][WARNING] - Non-finite loss encountered; skipping batch.
+[2025-10-05 21:46:43,395][root][WARNING] - Non-finite loss encountered; skipping batch.
+[2025-10-05 21:46:43,459][root][WARNING] - Non-finite loss encountered; skipping batch.
+[2025-10-05 21:46:43,516][root][WARNING] - Non-finite loss encountered; skipping batch.
+[2025-10-05 21:46:43,582][root][WARNING] - Non-finite loss encountered; skipping batch.
+[2025-10-05 21:46:43,647][root][WARNING] - Non-finite loss encountered; skipping batch.
+[2025-10-05 21:46:43,709][root][WARNING] - Non-finite loss encountered; skipping batch.
+[2025-10-05 21:46:43,774][root][WARNING] - Non-finite loss encountered; skipping batch.
+[2025-10-05 21:46:43,838][root][WARNING] - Non-finite loss encountered; skipping batch.
+[2025-10-05 21:46:43,884][root][WARNING] - Non-finite loss encountered; skipping batch.
+[2025-10-05 21:46:44,309][root][WARNING] - Non-finite loss encountered; skipping batch.
+[2025-10-05 21:46:44,318][root][WARNING] - Non-finite loss encountered; skipping batch.
+[2025-10-05 21:46:44,510][root][WARNING] - Non-finite loss encountered; skipping batch.
+[2025-10-05 21:46:44,518][root][WARNING] - Non-finite loss encountered; skipping batch.
+[2025-10-05 21:46:44,708][root][WARNING] - Non-finite loss encountered; skipping batch.
+[2025-10-05 21:46:44,716][root][WARNING] - Non-finite loss encountered; skipping batch.
+[2025-10-05 21:46:44,922][root][WARNING] - Non-finite loss encountered; skipping batch.
+[2025-10-05 21:46:44,922][root][WARNING] - Non-finite loss encountered; skipping batch.
+[2025-10-05 21:46:45,083][root][WARNING] - Non-finite loss encountered; skipping batch.
+[2025-10-05 21:46:45,152][root][WARNING] - Non-finite loss encountered; skipping batch.
+[2025-10-05 21:46:45,248][root][WARNING] - Non-finite loss encountered; skipping batch.
+[2025-10-05 21:46:45,369][root][WARNING] - Non-finite loss encountered; skipping batch.
+[2025-10-05 21:46:45,470][root][WARNING] - Non-finite loss encountered; skipping batch.
+[2025-10-05 21:46:45,579][root][WARNING] - Non-finite loss encountered; skipping batch.
+[2025-10-05 21:46:45,647][root][WARNING] - Non-finite loss encountered; skipping batch.
+[2025-10-05 21:46:45,774][root][WARNING] - Non-finite loss encountered; skipping batch.
+[2025-10-05 21:46:45,842][root][WARNING] - Non-finite loss encountered; skipping batch.
+[2025-10-05 21:46:45,974][root][WARNING] - Non-finite loss encountered; skipping batch.
+[2025-10-05 21:46:46,042][root][WARNING] - Non-finite loss encountered; skipping batch.
+[2025-10-05 21:46:46,174][root][WARNING] - Non-finite loss encountered; skipping batch.
+[2025-10-05 21:46:46,243][root][WARNING] - Non-finite loss encountered; skipping batch.
+[2025-10-05 21:46:46,374][root][WARNING] - Non-finite loss encountered; skipping batch.
+[2025-10-05 21:46:46,418][root][WARNING] - Non-finite loss encountered; skipping batch.
+[2025-10-05 21:46:46,597][root][WARNING] - Non-finite loss encountered; skipping batch.
+[2025-10-05 21:46:46,604][root][WARNING] - Non-finite loss encountered; skipping batch.
+[2025-10-05 21:46:46,814][root][WARNING] - Non-finite loss encountered; skipping batch.
+[2025-10-05 21:46:46,814][root][WARNING] - Non-finite loss encountered; skipping batch.
+[2025-10-05 21:46:47,028][root][WARNING] - Non-finite loss encountered; skipping batch.
+[2025-10-05 21:46:47,028][root][WARNING] - Non-finite loss encountered; skipping batch.
+[2025-10-05 21:46:47,227][root][WARNING] - Non-finite loss encountered; skipping batch.
+[2025-10-05 21:46:47,228][root][WARNING] - Non-finite loss encountered; skipping batch.
+[2025-10-05 21:46:47,315][root][WARNING] - Non-finite loss encountered; skipping batch.
+[2025-10-05 21:46:47,386][root][WARNING] - Non-finite loss encountered; skipping batch.
+[2025-10-05 21:46:47,466][root][WARNING] - Non-finite loss encountered; skipping batch.
+[2025-10-05 21:46:47,545][root][WARNING] - Non-finite loss encountered; skipping batch.
+[2025-10-05 21:46:47,616][root][WARNING] - Non-finite loss encountered; skipping batch.
+[2025-10-05 21:46:47,689][root][WARNING] - Non-finite loss encountered; skipping batch.
+[2025-10-05 21:46:47,737][root][INFO] - Model: DERITS, Epoch 2/20: Train Loss=0.000000, Val Loss=0.000000
+[2025-10-05 21:46:47,868][root][WARNING] - Non-finite loss encountered; skipping batch.
+[2025-10-05 21:46:48,005][root][WARNING] - Non-finite loss encountered; skipping batch.
+[2025-10-05 21:46:48,071][root][WARNING] - Non-finite loss encountered; skipping batch.
+[2025-10-05 21:46:48,165][root][WARNING] - Non-finite loss encountered; skipping batch.
+[2025-10-05 21:46:48,289][root][WARNING] - Non-finite loss encountered; skipping batch.
+[2025-10-05 21:46:48,370][root][WARNING] - Non-finite loss encountered; skipping batch.
+[2025-10-05 21:46:48,486][root][WARNING] - Non-finite loss encountered; skipping batch.
+[2025-10-05 21:46:48,577][root][WARNING] - Non-finite loss encountered; skipping batch.
+[2025-10-05 21:46:48,710][root][WARNING] - Non-finite loss encountered; skipping batch.
+[2025-10-05 21:46:48,780][root][WARNING] - Non-finite loss encountered; skipping batch.
+[2025-10-05 21:46:48,912][root][WARNING] - Non-finite loss encountered; skipping batch.
+[2025-10-05 21:46:48,977][root][WARNING] - Non-finite loss encountered; skipping batch.
+[2025-10-05 21:46:49,135][root][WARNING] - Non-finite loss encountered; skipping batch.
+[2025-10-05 21:46:49,144][root][WARNING] - Non-finite loss encountered; skipping batch.
+[2025-10-05 21:46:49,358][root][WARNING] - Non-finite loss encountered; skipping batch.
+[2025-10-05 21:46:49,359][root][WARNING] - Non-finite loss encountered; skipping batch.
+[2025-10-05 21:46:49,555][root][WARNING] - Non-finite loss encountered; skipping batch.
+[2025-10-05 21:46:49,579][root][WARNING] - Non-finite loss encountered; skipping batch.
+[2025-10-05 21:46:49,717][root][WARNING] - Non-finite loss encountered; skipping batch.
+[2025-10-05 21:46:49,787][root][WARNING] - Non-finite loss encountered; skipping batch.
+[2025-10-05 21:46:49,884][root][WARNING] - Non-finite loss encountered; skipping batch.
+[2025-10-05 21:46:50,013][root][WARNING] - Non-finite loss encountered; skipping batch.
+[2025-10-05 21:46:50,046][root][WARNING] - Non-finite loss encountered; skipping batch.
+[2025-10-05 21:46:50,239][root][WARNING] - Non-finite loss encountered; skipping batch.
+[2025-10-05 21:46:50,249][root][WARNING] - Non-finite loss encountered; skipping batch.
+[2025-10-05 21:46:50,455][root][WARNING] - Non-finite loss encountered; skipping batch.
+[2025-10-05 21:46:50,456][root][WARNING] - Non-finite loss encountered; skipping batch.
+[2025-10-05 21:46:50,670][root][WARNING] - Non-finite loss encountered; skipping batch.
+[2025-10-05 21:46:50,670][root][WARNING] - Non-finite loss encountered; skipping batch.
+[2025-10-05 21:46:50,874][root][WARNING] - Non-finite loss encountered; skipping batch.
+[2025-10-05 21:46:50,902][root][WARNING] - Non-finite loss encountered; skipping batch.
+[2025-10-05 21:46:51,035][root][WARNING] - Non-finite loss encountered; skipping batch.
+[2025-10-05 21:46:51,134][root][WARNING] - Non-finite loss encountered; skipping batch.
+[2025-10-05 21:46:51,204][root][WARNING] - Non-finite loss encountered; skipping batch.
+[2025-10-05 21:46:51,339][root][WARNING] - Non-finite loss encountered; skipping batch.
+[2025-10-05 21:46:51,393][root][WARNING] - Non-finite loss encountered; skipping batch.
+[2025-10-05 21:46:51,567][root][WARNING] - Non-finite loss encountered; skipping batch.
+[2025-10-05 21:46:51,575][root][WARNING] - Non-finite loss encountered; skipping batch.
+[2025-10-05 21:46:51,785][root][WARNING] - Non-finite loss encountered; skipping batch.
+[2025-10-05 21:46:51,785][root][WARNING] - Non-finite loss encountered; skipping batch.
+[2025-10-05 21:46:51,962][root][WARNING] - Non-finite loss encountered; skipping batch.
+[2025-10-05 21:46:51,971][root][WARNING] - Non-finite loss encountered; skipping batch.
+[2025-10-05 21:46:52,186][root][WARNING] - Non-finite loss encountered; skipping batch.
+[2025-10-05 21:46:52,340][root][WARNING] - Non-finite loss encountered; skipping batch.
+[2025-10-05 21:46:52,485][root][WARNING] - Non-finite loss encountered; skipping batch.
+[2025-10-05 21:46:52,641][root][WARNING] - Non-finite loss encountered; skipping batch.
+[2025-10-05 21:46:52,786][root][WARNING] - Non-finite loss encountered; skipping batch.
+[2025-10-05 21:46:52,934][root][WARNING] - Non-finite loss encountered; skipping batch.
+[2025-10-05 21:46:53,093][root][WARNING] - Non-finite loss encountered; skipping batch.
+[2025-10-05 21:46:53,211][root][INFO] - Model: DERITS, Epoch 2/20: Train Loss=0.000000, Val Loss=0.000000
+[2025-10-05 21:46:53,480][root][WARNING] - Non-finite loss encountered; skipping batch.
+[2025-10-05 21:46:53,513][root][WARNING] - Non-finite loss encountered; skipping batch.

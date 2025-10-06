@@ -1,0 +1,139 @@
+[2025-10-05 05:41:00,600][root][INFO] - Configuration: experiment:
+  data_path: ../data
+  checkpoint_dir: ../checkpoints
+  models:
+  - 'inf'
+  row_fraction: 1.0
+  num_targets: 424
+  filter_features: false
+  optuna:
+    direction: minimize
+    n_trials: 2
+    n_jobs: 2
+model:
+  model_type: default
+  model_class: default
+  trainer_class: default
+  params:
+    input_size: 1672
+    output_size: 424
+    input_len: 64
+    output_len: 5
+    batch_size: 16
+    hidden_size: 128
+    num_layers: 2
+    dropout: 0.1
+    epochs: 10
+    patience: 5
+    channels: 64
+    blocks: 3
+    kernel_size: 5
+    num_conv_layers: 2
+    tcn_kernel: 3
+    decom_kernel_size: 25
+    top_k_modes: 5
+    nhead: 8
+    dim_feedforward: 512
+    weight_decay: 0.001
+    scheduler_patience: 5
+    scheduler_factor: 0.5
+    clip_grad_norm: 1.0
+    partially_finite_target: false
+  lr: 0.001
+  optimizer: AdamW
+  lr_policy: constant
+
+[2025-10-05 05:41:00,601][root][INFO] - Set random seed to 42 for reproducibility.
+[2025-10-05 05:41:00,601][root][INFO] - CUDA version: 12.1
+[2025-10-05 05:41:00,639][root][INFO] - Device count: 1
+[2025-10-05 05:41:00,642][root][INFO] - Device name: NVIDIA GeForce RTX 4060 Laptop GPU
+[2025-10-05 05:41:00,738][root][INFO] - Loading train.csv from ../data/train.csv
+[2025-10-05 05:41:00,815][root][INFO] - Loading train_labels.csv from ../data/train_labels.csv
+[2025-10-05 05:41:00,934][root][INFO] - Loading target_pairs.csv from ../data/target_pairs.csv
+[2025-10-05 05:41:01,092][root][INFO] - X_full NaNs after imputation: 0
+[2025-10-05 05:41:01,092][root][INFO] - Y_full NaNs before imputation: 0
+[2025-10-05 05:41:01,094][root][INFO] - Y_full NaNs after imputation: 0
+[2025-10-05 05:41:01,094][root][INFO] - X_full feature count: 1671
+[2025-10-05 05:41:01,102][root][INFO] - Data loaded: X_full_np shape=(1917, 1671), Y_full_np shape=(1917, 424)
+[2025-10-05 05:41:01,102][root][INFO] - Raw data shapes: X=(1917, 1671), Y=(1917, 424)
+[2025-10-05 05:41:01,102][root][INFO] - Sample batch shapes: X=(64, 1671), Y=(64, 424)
+[2025-10-05 05:41:01,591][root][INFO] - Trial 9 started with params: {'input_size': 1671, 'output_size': 424, 'output_len': 5, 'input_len': 64, 'label_len': 64, 'hidden_size': 512, 'num_layers': 3, 'd_layers': 1, 'nhead': 8, 'dim_feedforward': 1024, 'dropout': 0.1, 'batch_size': 32, 'attn': 'prob', 'distil': True}, lr=8.337377820146281e-05, optimizer=AdamW, lr_policy=clr
+[2025-10-05 05:41:01,865][root][INFO] - Performed memory cleaning.
+[2025-10-05 05:41:01,946][root][INFO] - Trial 8 started with params: {'input_size': 1671, 'output_size': 424, 'output_len': 5, 'input_len': 32, 'label_len': 16, 'hidden_size': 128, 'num_layers': 3, 'd_layers': 3, 'nhead': 4, 'dim_feedforward': 1280, 'dropout': 0.2, 'batch_size': 64, 'attn': 'prob', 'distil': True}, lr=0.0009160610812026599, optimizer=Adam, lr_policy=onecycle
+[2025-10-05 05:41:02,204][root][INFO] - GPU Memory: 1.06 GB used out of 8.00 GB
+[2025-10-05 05:41:02,205][root][INFO] - Performed memory cleaning.
+[2025-10-05 05:41:02,205][root][INFO] - GPU Memory: 1.06 GB used out of 8.00 GB
+[2025-10-05 05:41:02,209][root][INFO] - Trial 9: X_raw shape=(1917, 1671), Y_raw shape=(1917, 424), NaNs X=0, Y=0
+[2025-10-05 05:41:02,210][root][INFO] - Building Informer datasets with input_len=64, output_len=5, label_len=64, use_time_feats=True
+[2025-10-05 05:41:02,210][root][INFO] - Trial 8: X_raw shape=(1917, 1671), Y_raw shape=(1917, 424), NaNs X=0, Y=0
+[2025-10-05 05:41:02,210][root][INFO] - Building Informer datasets with input_len=32, output_len=5, label_len=16, use_time_feats=True
+[2025-10-05 05:41:02,471][root][INFO] - WindowDataset created: Xw shape=(1881, 32, 1671), Yw shape=(1881, 5, 424), invalid_windows: 0
+[2025-10-05 05:41:02,995][root][INFO] - WindowDataset created: Xw shape=(1849, 64, 1671), Yw shape=(1849, 5, 424), invalid_windows: 0
+[2025-10-05 05:41:05,540][root][INFO] - InformerWindowDataset created: Xw shape=(1881, 32, 1671), x_dec shape=(1881, 21, 424), Yw shape=(1881, 5, 424), mark_enc shape=(1881, 32, 128), invalid_windows=0
+[2025-10-05 05:41:05,540][root][INFO] - Informer dataset created: X_enc shape=(1881, 32, 1671), x_dec shape=(1881, 21, 424), Y shape=(1881, 5, 424), mark_enc shape=(1881, 32, 128)
+[2025-10-05 05:41:05,669][root][INFO] - Informer DataLoaders created: train=1411, val=282, test=188
+[2025-10-05 05:41:05,671][root][INFO] - Trial 8: Creating InTrainer with device=cuda
+[2025-10-05 05:41:05,671][root][INFO] - InTrainer initialized with model_kwargs: {'input_size': 1671, 'enc_in': 1671, 'dec_in': 424, 'c_out': 424, 'seq_len': 32, 'label_len': 16, 'out_len': 5, 'd_model': 128, 'n_heads': 4, 'e_layers': 3, 'd_layers': 3, 'd_ff': 1280, 'dropout': 0.2, 'attn': 'prob', 'embed': 'fixed', 'freq': 'd', 'activation': 'gelu', 'distil': True, 'device': 'cuda'}
+[2025-10-05 05:41:05,987][root][INFO] - Trainer initialized with device=cpu
+[2025-10-05 05:41:06,435][root][ERROR] - Trial 8 failed: The size of tensor a (320) must match the size of tensor b (64) at non-singleton dimension 0
+Traceback (most recent call last):
+  File "/root/vscode/portfolio/mitsui_2025/src/study.py", line 202, in objective_informer
+    val_loss = trainer.train(train_loader=train_loader, val_loader=val_loader)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/root/vscode/portfolio/mitsui_2025/src/trainer.py", line 675, in train
+    loss = self.masked_mse(pred, y) if self.cfg.partially_finite_target else nn.MSELoss()(pred, y)
+                                                                             ^^^^^^^^^^^^^^^^^^^^^
+  File "/root/anaconda3/envs/mitsui/lib/python3.11/site-packages/torch/nn/modules/module.py", line 1736, in _wrapped_call_impl
+    return self._call_impl(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/root/anaconda3/envs/mitsui/lib/python3.11/site-packages/torch/nn/modules/module.py", line 1747, in _call_impl
+    return forward_call(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/root/anaconda3/envs/mitsui/lib/python3.11/site-packages/torch/nn/modules/loss.py", line 608, in forward
+    return F.mse_loss(input, target, reduction=self.reduction)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/root/anaconda3/envs/mitsui/lib/python3.11/site-packages/torch/nn/functional.py", line 3791, in mse_loss
+    expanded_input, expanded_target = torch.broadcast_tensors(input, target)
+                                      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/root/anaconda3/envs/mitsui/lib/python3.11/site-packages/torch/functional.py", line 76, in broadcast_tensors
+    return _VF.broadcast_tensors(tensors)  # type: ignore[attr-defined]
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+RuntimeError: The size of tensor a (320) must match the size of tensor b (64) at non-singleton dimension 0
+
+[2025-10-05 05:41:06,724][root][INFO] - GPU Memory: 1.06 GB used out of 8.00 GB
+[2025-10-05 05:41:06,989][root][INFO] - Performed memory cleaning.
+[2025-10-05 05:41:07,545][root][INFO] - InformerWindowDataset created: Xw shape=(1849, 64, 1671), x_dec shape=(1849, 69, 424), Yw shape=(1849, 5, 424), mark_enc shape=(1849, 64, 512), invalid_windows=0
+[2025-10-05 05:41:07,558][root][INFO] - Informer dataset created: X_enc shape=(1849, 64, 1671), x_dec shape=(1849, 69, 424), Y shape=(1849, 5, 424), mark_enc shape=(1849, 64, 512)
+[2025-10-05 05:41:07,864][root][INFO] - Informer DataLoaders created: train=1388, val=277, test=184
+[2025-10-05 05:41:07,865][root][INFO] - Trial 9: Creating InTrainer with device=cuda
+[2025-10-05 05:41:07,865][root][INFO] - InTrainer initialized with model_kwargs: {'input_size': 1671, 'enc_in': 1671, 'dec_in': 424, 'c_out': 424, 'seq_len': 64, 'label_len': 64, 'out_len': 5, 'd_model': 512, 'n_heads': 8, 'e_layers': 3, 'd_layers': 1, 'd_ff': 1024, 'dropout': 0.1, 'attn': 'prob', 'embed': 'fixed', 'freq': 'd', 'activation': 'gelu', 'distil': True, 'device': 'cuda'}
+[2025-10-05 05:41:07,957][root][INFO] - Trainer initialized with device=cpu
+[2025-10-05 05:41:08,186][root][ERROR] - Trial 9 failed: The size of tensor a (160) must match the size of tensor b (32) at non-singleton dimension 0
+Traceback (most recent call last):
+  File "/root/vscode/portfolio/mitsui_2025/src/study.py", line 202, in objective_informer
+    val_loss = trainer.train(train_loader=train_loader, val_loader=val_loader)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/root/vscode/portfolio/mitsui_2025/src/trainer.py", line 675, in train
+    loss = self.masked_mse(pred, y) if self.cfg.partially_finite_target else nn.MSELoss()(pred, y)
+                                                                             ^^^^^^^^^^^^^^^^^^^^^
+  File "/root/anaconda3/envs/mitsui/lib/python3.11/site-packages/torch/nn/modules/module.py", line 1736, in _wrapped_call_impl
+    return self._call_impl(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/root/anaconda3/envs/mitsui/lib/python3.11/site-packages/torch/nn/modules/module.py", line 1747, in _call_impl
+    return forward_call(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/root/anaconda3/envs/mitsui/lib/python3.11/site-packages/torch/nn/modules/loss.py", line 608, in forward
+    return F.mse_loss(input, target, reduction=self.reduction)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/root/anaconda3/envs/mitsui/lib/python3.11/site-packages/torch/nn/functional.py", line 3791, in mse_loss
+    expanded_input, expanded_target = torch.broadcast_tensors(input, target)
+                                      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/root/anaconda3/envs/mitsui/lib/python3.11/site-packages/torch/functional.py", line 76, in broadcast_tensors
+    return _VF.broadcast_tensors(tensors)  # type: ignore[attr-defined]
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+RuntimeError: The size of tensor a (160) must match the size of tensor b (32) at non-singleton dimension 0
+
+[2025-10-05 05:41:08,507][root][INFO] - GPU Memory: 1.06 GB used out of 8.00 GB
+[2025-10-05 05:41:08,793][root][INFO] - Performed memory cleaning.
+[2025-10-05 05:41:08,818][root][WARNING] - No completed trials for INF. All trials were pruned or failed. Trials: 10
+[2025-10-05 05:41:08,820][root][INFO] - Trial states: [2, 2, 2, 2, 2, 2, 2, 2, 2, 2]

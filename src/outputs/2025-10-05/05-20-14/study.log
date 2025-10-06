@@ -1,0 +1,107 @@
+[2025-10-05 05:20:14,406][root][INFO] - Configuration: experiment:
+  data_path: ../data
+  checkpoint_dir: ../checkpoints
+  models:
+  - 'inf'
+  row_fraction: 1.0
+  num_targets: 424
+  filter_features: false
+  optuna:
+    direction: minimize
+    n_trials: 2
+    n_jobs: 2
+model:
+  model_type: default
+  model_class: default
+  trainer_class: default
+  params:
+    input_size: 1672
+    output_size: 424
+    input_len: 64
+    output_len: 5
+    batch_size: 16
+    hidden_size: 128
+    num_layers: 2
+    dropout: 0.1
+    epochs: 10
+    patience: 5
+    channels: 64
+    blocks: 3
+    kernel_size: 5
+    num_conv_layers: 2
+    tcn_kernel: 3
+    decom_kernel_size: 25
+    top_k_modes: 5
+    nhead: 8
+    dim_feedforward: 512
+    weight_decay: 0.001
+    scheduler_patience: 5
+    scheduler_factor: 0.5
+    clip_grad_norm: 1.0
+    partially_finite_target: false
+  lr: 0.001
+  optimizer: AdamW
+  lr_policy: constant
+
+[2025-10-05 05:20:14,407][root][INFO] - Set random seed to 42 for reproducibility.
+[2025-10-05 05:20:14,407][root][INFO] - CUDA version: 12.1
+[2025-10-05 05:20:14,446][root][INFO] - Device count: 1
+[2025-10-05 05:20:14,449][root][INFO] - Device name: NVIDIA GeForce RTX 4060 Laptop GPU
+[2025-10-05 05:20:14,546][root][INFO] - Loading train.csv from ../data/train.csv
+[2025-10-05 05:20:14,624][root][INFO] - Loading train_labels.csv from ../data/train_labels.csv
+[2025-10-05 05:20:14,724][root][INFO] - Loading target_pairs.csv from ../data/target_pairs.csv
+[2025-10-05 05:20:14,887][root][INFO] - X_full NaNs after imputation: 0
+[2025-10-05 05:20:14,887][root][INFO] - Y_full NaNs before imputation: 0
+[2025-10-05 05:20:14,888][root][INFO] - Y_full NaNs after imputation: 0
+[2025-10-05 05:20:14,888][root][INFO] - X_full feature count: 1671
+[2025-10-05 05:20:14,895][root][INFO] - Data loaded: X_full_np shape=(1917, 1671), Y_full_np shape=(1917, 424)
+[2025-10-05 05:20:14,895][root][INFO] - Raw data shapes: X=(1917, 1671), Y=(1917, 424)
+[2025-10-05 05:20:14,895][root][INFO] - Sample batch shapes: X=(64, 1671), Y=(64, 424)
+[2025-10-05 05:20:15,345][root][INFO] - Trial 20 started with params: {'input_size': 1671, 'output_size': 424, 'output_len': 5, 'input_len': 112, 'label_len': 48, 'hidden_size': 384, 'num_layers': 2, 'd_layers': 2, 'nhead': 4, 'dim_feedforward': 768, 'dropout': 0.05, 'batch_size': 64, 'attn': 'prob', 'distil': True, 'mix': True}, lr=0.0003332983065497603, optimizer=Adam, lr_policy=onecycle
+[2025-10-05 05:20:15,600][root][INFO] - Performed memory cleaning.
+[2025-10-05 05:20:15,727][root][INFO] - Trial 21 started with params: {'input_size': 1671, 'output_size': 424, 'output_len': 5, 'input_len': 112, 'label_len': 48, 'hidden_size': 384, 'num_layers': 2, 'd_layers': 2, 'nhead': 4, 'dim_feedforward': 768, 'dropout': 0.05, 'batch_size': 64, 'attn': 'prob', 'distil': True, 'mix': True}, lr=0.00034636384419748484, optimizer=Adam, lr_policy=onecycle
+[2025-10-05 05:20:15,989][root][INFO] - GPU Memory: 1.06 GB used out of 8.00 GB
+[2025-10-05 05:20:15,990][root][INFO] - Performed memory cleaning.
+[2025-10-05 05:20:15,990][root][INFO] - GPU Memory: 1.06 GB used out of 8.00 GB
+[2025-10-05 05:20:15,994][root][INFO] - Trial 20: X_raw shape=(1917, 1671), Y_raw shape=(1917, 424), NaNs X=0, Y=0
+[2025-10-05 05:20:15,994][root][INFO] - Trial 21: X_raw shape=(1917, 1671), Y_raw shape=(1917, 424), NaNs X=0, Y=0
+[2025-10-05 05:20:15,994][root][INFO] - Building Informer datasets with input_len=112, output_len=5, label_len=48, use_time_feats=True
+[2025-10-05 05:20:15,994][root][INFO] - Building Informer datasets with input_len=112, output_len=5, label_len=48, use_time_feats=True
+[2025-10-05 05:20:16,608][root][INFO] - WindowDataset created: Xw shape=(1801, 112, 1671), Yw shape=(1801, 5, 424), invalid_windows: 0
+[2025-10-05 05:20:16,611][root][INFO] - WindowDataset created: Xw shape=(1801, 112, 1671), Yw shape=(1801, 5, 424), invalid_windows: 0
+[2025-10-05 05:20:22,457][root][INFO] - InformerWindowDataset created: Xw shape=(1801, 112, 1671), x_dec shape=(1801, 53, 424), Yw shape=(1801, 5, 424), mark_enc shape=(1801, 112, 384), invalid_windows=0
+[2025-10-05 05:20:22,457][root][INFO] - Informer dataset created: X_enc shape=(1801, 112, 1671), x_dec shape=(1801, 53, 424), Y shape=(1801, 5, 424), mark_enc shape=(1801, 112, 384)
+[2025-10-05 05:20:22,462][root][INFO] - InformerWindowDataset created: Xw shape=(1801, 112, 1671), x_dec shape=(1801, 53, 424), Yw shape=(1801, 5, 424), mark_enc shape=(1801, 112, 384), invalid_windows=0
+[2025-10-05 05:20:22,475][root][INFO] - Informer dataset created: X_enc shape=(1801, 112, 1671), x_dec shape=(1801, 53, 424), Y shape=(1801, 5, 424), mark_enc shape=(1801, 112, 384)
+[2025-10-05 05:20:23,196][root][INFO] - Informer DataLoaders created: train=1351, val=270, test=180
+[2025-10-05 05:20:23,196][root][INFO] - Trial 21: Creating InTrainer with device=cuda
+[2025-10-05 05:20:23,196][root][INFO] - InTrainer initialized with model_kwargs: {'input_size': 1671, 'enc_in': 1671, 'dec_in': 424, 'c_out': 424, 'seq_len': 112, 'label_len': 48, 'out_len': 5, 'd_model': 384, 'n_heads': 4, 'e_layers': 2, 'd_layers': 2, 'd_ff': 768, 'dropout': 0.05, 'attn': 'prob', 'embed': 'fixed', 'freq': 'd', 'activation': 'gelu', 'distil': True, 'mix': True, 'device': 'cuda'}
+[2025-10-05 05:20:23,198][root][ERROR] - Trial 21 failed: InForecaster.__init__() got an unexpected keyword argument 'mix'
+Traceback (most recent call last):
+  File "/root/vscode/portfolio/mitsui_2025/src/study.py", line 200, in objective_informer
+    trainer = trainer_class(train_cfg)
+              ^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/root/vscode/portfolio/mitsui_2025/src/trainer.py", line 637, in __init__
+    model = InForecaster(**model_kwargs)
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+TypeError: InForecaster.__init__() got an unexpected keyword argument 'mix'
+
+[2025-10-05 05:20:23,530][root][INFO] - GPU Memory: 1.06 GB used out of 8.00 GB
+[2025-10-05 05:20:23,814][root][INFO] - Performed memory cleaning.
+[2025-10-05 05:20:23,814][root][INFO] - Informer DataLoaders created: train=1351, val=270, test=180
+[2025-10-05 05:20:23,815][root][INFO] - Trial 20: Creating InTrainer with device=cuda
+[2025-10-05 05:20:23,815][root][INFO] - InTrainer initialized with model_kwargs: {'input_size': 1671, 'enc_in': 1671, 'dec_in': 424, 'c_out': 424, 'seq_len': 112, 'label_len': 48, 'out_len': 5, 'd_model': 384, 'n_heads': 4, 'e_layers': 2, 'd_layers': 2, 'd_ff': 768, 'dropout': 0.05, 'attn': 'prob', 'embed': 'fixed', 'freq': 'd', 'activation': 'gelu', 'distil': True, 'mix': True, 'device': 'cuda'}
+[2025-10-05 05:20:23,816][root][ERROR] - Trial 20 failed: InForecaster.__init__() got an unexpected keyword argument 'mix'
+Traceback (most recent call last):
+  File "/root/vscode/portfolio/mitsui_2025/src/study.py", line 200, in objective_informer
+    trainer = trainer_class(train_cfg)
+              ^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/root/vscode/portfolio/mitsui_2025/src/trainer.py", line 637, in __init__
+    model = InForecaster(**model_kwargs)
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+TypeError: InForecaster.__init__() got an unexpected keyword argument 'mix'
+
+[2025-10-05 05:20:24,076][root][INFO] - GPU Memory: 1.06 GB used out of 8.00 GB
+[2025-10-05 05:20:24,357][root][INFO] - Performed memory cleaning.
+[2025-10-05 05:20:24,402][root][WARNING] - No completed trials for INF. All trials were pruned or failed. Trials: 22
+[2025-10-05 05:20:24,405][root][INFO] - Trial states: [3, 3, 3, 3, 2, 2, 3, 3, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2]

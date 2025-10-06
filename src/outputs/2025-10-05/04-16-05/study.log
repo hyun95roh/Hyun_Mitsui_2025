@@ -1,0 +1,105 @@
+[2025-10-05 04:16:05,576][root][INFO] - Configuration: experiment:
+  data_path: ../data
+  checkpoint_dir: ../checkpoints
+  models:
+  - 'inf'
+  row_fraction: 1.0
+  num_targets: 424
+  filter_features: false
+  optuna:
+    direction: minimize
+    n_trials: 2
+    n_jobs: 2
+model:
+  model_type: default
+  model_class: default
+  trainer_class: default
+  params:
+    input_size: 1672
+    output_size: 424
+    input_len: 64
+    output_len: 5
+    batch_size: 16
+    hidden_size: 128
+    num_layers: 2
+    dropout: 0.1
+    epochs: 10
+    patience: 5
+    channels: 64
+    blocks: 3
+    kernel_size: 5
+    num_conv_layers: 2
+    tcn_kernel: 3
+    decom_kernel_size: 25
+    top_k_modes: 5
+    nhead: 8
+    dim_feedforward: 512
+    weight_decay: 0.001
+    scheduler_patience: 5
+    scheduler_factor: 0.5
+    clip_grad_norm: 1.0
+    partially_finite_target: false
+  lr: 0.001
+  optimizer: AdamW
+  lr_policy: constant
+
+[2025-10-05 04:16:05,578][root][INFO] - Set random seed to 42 for reproducibility.
+[2025-10-05 04:16:05,578][root][INFO] - CUDA version: 12.1
+[2025-10-05 04:16:05,613][root][INFO] - Device count: 1
+[2025-10-05 04:16:05,615][root][INFO] - Device name: NVIDIA GeForce RTX 4060 Laptop GPU
+[2025-10-05 04:16:05,720][root][INFO] - Loading train.csv from ../data/train.csv
+[2025-10-05 04:16:05,805][root][INFO] - Loading train_labels.csv from ../data/train_labels.csv
+[2025-10-05 04:16:05,914][root][INFO] - Loading target_pairs.csv from ../data/target_pairs.csv
+[2025-10-05 04:16:06,066][root][INFO] - X_full NaNs after imputation: 0
+[2025-10-05 04:16:06,067][root][INFO] - Y_full NaNs before imputation: 0
+[2025-10-05 04:16:06,068][root][INFO] - Y_full NaNs after imputation: 0
+[2025-10-05 04:16:06,068][root][INFO] - X_full feature count: 1671
+[2025-10-05 04:16:06,074][root][INFO] - Data loaded: X_full_np shape=(1917, 1671), Y_full_np shape=(1917, 424)
+[2025-10-05 04:16:06,075][root][INFO] - Raw data shapes: X=(1917, 1671), Y=(1917, 424)
+[2025-10-05 04:16:06,075][root][INFO] - Sample batch shapes: X=(64, 1671), Y=(64, 424)
+[2025-10-05 04:16:06,606][root][INFO] - Trial 5 started with params: {'input_size': 1671, 'output_size': 424, 'output_len': 5, 'input_len': 128, 'label_len': 48, 'hidden_size': 384, 'num_layers': 2, 'd_layers': 3, 'nhead': 4, 'dim_feedforward': 512, 'dropout': 0.0, 'batch_size': 64, 'attn': 'prob', 'distil': True, 'mix': True}, lr=0.000990247924588254, optimizer=Adam, lr_policy=onecycle
+[2025-10-05 04:16:06,881][root][INFO] - Performed memory cleaning.
+[2025-10-05 04:16:06,891][root][INFO] - Trial 4 started with params: {'input_size': 1671, 'output_size': 424, 'output_len': 5, 'input_len': 112, 'label_len': 32, 'hidden_size': 384, 'num_layers': 3, 'd_layers': 2, 'nhead': 4, 'dim_feedforward': 1280, 'dropout': 0.0, 'batch_size': 64, 'attn': 'prob', 'distil': True, 'mix': True}, lr=5.380422903018029e-05, optimizer=AdamW, lr_policy=clr
+[2025-10-05 04:16:07,148][root][INFO] - GPU Memory: 1.06 GB used out of 8.00 GB
+[2025-10-05 04:16:07,148][root][INFO] - Performed memory cleaning.
+[2025-10-05 04:16:07,149][root][INFO] - GPU Memory: 1.06 GB used out of 8.00 GB
+[2025-10-05 04:16:07,154][root][INFO] - Trial 5: X_raw shape=(1917, 1671), Y_raw shape=(1917, 424), NaNs X=0, Y=0
+[2025-10-05 04:16:07,154][root][INFO] - Trial 4: X_raw shape=(1917, 1671), Y_raw shape=(1917, 424), NaNs X=0, Y=0
+[2025-10-05 04:16:07,154][root][INFO] - Building Informer datasets with input_len=128, output_len=5, label_len=48, use_time_feats=True
+[2025-10-05 04:16:07,154][root][INFO] - Building Informer datasets with input_len=112, output_len=5, label_len=32, use_time_feats=True
+[2025-10-05 04:16:07,848][root][INFO] - WindowDataset created: Xw shape=(1801, 112, 1671), Yw shape=(1801, 5, 424), invalid_windows: 0
+[2025-10-05 04:16:08,071][root][INFO] - WindowDataset created: Xw shape=(1785, 128, 1671), Yw shape=(1785, 5, 424), invalid_windows: 0
+[2025-10-05 04:16:13,775][root][INFO] - InformerWindowDataset created: Xw shape=(1801, 112, 1671), x_dec shape=(1801, 37, 424), Yw shape=(1801, 5, 424), mark_enc shape=(1801, 112, 384), invalid_windows=0
+[2025-10-05 04:16:13,776][root][INFO] - Informer dataset created: X_enc shape=(1801, 112, 1671), x_dec shape=(1801, 37, 424), Y shape=(1801, 5, 424), mark_enc shape=(1801, 112, 384)
+[2025-10-05 04:16:13,904][root][INFO] - InformerWindowDataset created: Xw shape=(1785, 128, 1671), x_dec shape=(1785, 53, 424), Yw shape=(1785, 5, 424), mark_enc shape=(1785, 128, 384), invalid_windows=0
+[2025-10-05 04:16:13,928][root][INFO] - Informer dataset created: X_enc shape=(1785, 128, 1671), x_dec shape=(1785, 53, 424), Y shape=(1785, 5, 424), mark_enc shape=(1785, 128, 384)
+[2025-10-05 04:16:14,286][root][INFO] - Informer DataLoaders created: train=1351, val=270, test=180
+[2025-10-05 04:16:14,287][root][INFO] - Trial 4: Creating InTrainer with device=cuda
+[2025-10-05 04:16:14,288][root][ERROR] - Trial 4 failed: 'InTrainer' object has no attribute 'cfg'
+Traceback (most recent call last):
+  File "/root/vscode/portfolio/mitsui_2025/src/study.py", line 200, in objective_informer
+    trainer = trainer_class(train_cfg)
+              ^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/root/vscode/portfolio/mitsui_2025/src/trainer.py", line 635, in __init__
+    self.cfg.device = torch.device('cpu')
+    ^^^^^^^^
+AttributeError: 'InTrainer' object has no attribute 'cfg'
+
+[2025-10-05 04:16:14,624][root][INFO] - GPU Memory: 1.06 GB used out of 8.00 GB
+[2025-10-05 04:16:14,912][root][INFO] - Performed memory cleaning.
+[2025-10-05 04:16:15,013][root][INFO] - Informer DataLoaders created: train=1340, val=267, test=178
+[2025-10-05 04:16:15,013][root][INFO] - Trial 5: Creating InTrainer with device=cuda
+[2025-10-05 04:16:15,014][root][ERROR] - Trial 5 failed: 'InTrainer' object has no attribute 'cfg'
+Traceback (most recent call last):
+  File "/root/vscode/portfolio/mitsui_2025/src/study.py", line 200, in objective_informer
+    trainer = trainer_class(train_cfg)
+              ^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/root/vscode/portfolio/mitsui_2025/src/trainer.py", line 635, in __init__
+    self.cfg.device = torch.device('cpu')
+    ^^^^^^^^
+AttributeError: 'InTrainer' object has no attribute 'cfg'
+
+[2025-10-05 04:16:15,526][root][INFO] - GPU Memory: 1.06 GB used out of 8.00 GB
+[2025-10-05 04:16:15,799][root][INFO] - Performed memory cleaning.
+[2025-10-05 04:16:15,821][root][WARNING] - No completed trials for INF. All trials were pruned or failed. Trials: 6
+[2025-10-05 04:16:15,823][root][INFO] - Trial states: [3, 3, 3, 3, 2, 2]

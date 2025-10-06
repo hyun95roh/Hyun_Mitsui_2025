@@ -1,0 +1,62 @@
+[2025-10-05 20:53:52,802][root][INFO] - Configuration: experiment:
+  data_path: ../data
+  checkpoint_dir: ../checkpoints
+  models:
+  - derits
+  row_fraction: 1.0
+  num_targets: 424
+  filter_features: false
+  optuna:
+    direction: minimize
+    n_trials: 2
+    n_jobs: 2
+model:
+  model_type: default
+  model_class: default
+  trainer_class: default
+  params:
+    input_size: 1672
+    output_size: 424
+    input_len: 64
+    output_len: 5
+    batch_size: 16
+    hidden_size: 128
+    num_layers: 2
+    dropout: 0.1
+    epochs: 10
+    patience: 5
+    channels: 64
+    blocks: 3
+    kernel_size: 5
+    num_conv_layers: 2
+    tcn_kernel: 3
+    decom_kernel_size: 25
+    top_k_modes: 5
+    nhead: 8
+    dim_feedforward: 512
+    weight_decay: 0.001
+    scheduler_patience: 5
+    scheduler_factor: 0.5
+    clip_grad_norm: 1.0
+    partially_finite_target: false
+  lr: 0.001
+  optimizer: AdamW
+  lr_policy: constant
+
+[2025-10-05 20:53:52,804][root][INFO] - Set random seed to 42 for reproducibility.
+[2025-10-05 20:53:52,804][root][INFO] - CUDA version: 12.1
+[2025-10-05 20:53:52,842][root][INFO] - Device count: 1
+[2025-10-05 20:53:52,844][root][INFO] - Device name: NVIDIA GeForce RTX 4060 Laptop GPU
+[2025-10-05 20:53:52,950][root][INFO] - Loading train.csv from ../data/train.csv
+[2025-10-05 20:53:53,029][root][INFO] - Loading train_labels.csv from ../data/train_labels.csv
+[2025-10-05 20:53:53,138][root][INFO] - Loading target_pairs.csv from ../data/target_pairs.csv
+[2025-10-05 20:53:53,300][root][INFO] - X_full NaNs after imputation: 0
+[2025-10-05 20:53:53,300][root][INFO] - Y_full NaNs before imputation: 0
+[2025-10-05 20:53:53,302][root][INFO] - Y_full NaNs after imputation: 0
+[2025-10-05 20:53:53,302][root][INFO] - X_full feature count: 1671
+[2025-10-05 20:53:53,309][root][INFO] - Data loaded: X_full_np shape=(1917, 1671), Y_full_np shape=(1917, 424)
+[2025-10-05 20:53:53,309][root][INFO] - Raw data shapes: X=(1917, 1671), Y=(1917, 424)
+[2025-10-05 20:53:53,309][root][INFO] - Sample batch shapes: X=(64, 1671), Y=(64, 424)
+[2025-10-05 20:53:54,930][root][INFO] - WindowDataset created: Xw shape=(1721, 192, 1671), Yw shape=(1721, 5, 424), invalid_windows: 0
+[2025-10-05 20:53:54,994][root][INFO] - WindowDataset created: Xw shape=(1721, 192, 1671), Yw shape=(1721, 5, 424), invalid_windows: 0
+[2025-10-05 20:54:44,598][root][INFO] - [DERITS][EP 1] train nan | val nan | best inf

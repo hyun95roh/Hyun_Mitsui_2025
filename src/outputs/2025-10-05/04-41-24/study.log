@@ -1,0 +1,190 @@
+[2025-10-05 04:41:24,119][root][INFO] - Configuration: experiment:
+  data_path: ../data
+  checkpoint_dir: ../checkpoints
+  models:
+  - 'inf'
+  row_fraction: 1.0
+  num_targets: 424
+  filter_features: false
+  optuna:
+    direction: minimize
+    n_trials: 2
+    n_jobs: 2
+model:
+  model_type: default
+  model_class: default
+  trainer_class: default
+  params:
+    input_size: 1672
+    output_size: 424
+    input_len: 64
+    output_len: 5
+    batch_size: 16
+    hidden_size: 128
+    num_layers: 2
+    dropout: 0.1
+    epochs: 10
+    patience: 5
+    channels: 64
+    blocks: 3
+    kernel_size: 5
+    num_conv_layers: 2
+    tcn_kernel: 3
+    decom_kernel_size: 25
+    top_k_modes: 5
+    nhead: 8
+    dim_feedforward: 512
+    weight_decay: 0.001
+    scheduler_patience: 5
+    scheduler_factor: 0.5
+    clip_grad_norm: 1.0
+    partially_finite_target: false
+  lr: 0.001
+  optimizer: AdamW
+  lr_policy: constant
+
+[2025-10-05 04:41:24,120][root][INFO] - Set random seed to 42 for reproducibility.
+[2025-10-05 04:41:24,120][root][INFO] - CUDA version: 12.1
+[2025-10-05 04:41:24,161][root][INFO] - Device count: 1
+[2025-10-05 04:41:24,162][root][INFO] - Device name: NVIDIA GeForce RTX 4060 Laptop GPU
+[2025-10-05 04:41:24,262][root][INFO] - Loading train.csv from ../data/train.csv
+[2025-10-05 04:41:24,339][root][INFO] - Loading train_labels.csv from ../data/train_labels.csv
+[2025-10-05 04:41:24,437][root][INFO] - Loading target_pairs.csv from ../data/target_pairs.csv
+[2025-10-05 04:41:24,572][root][INFO] - X_full NaNs after imputation: 0
+[2025-10-05 04:41:24,572][root][INFO] - Y_full NaNs before imputation: 0
+[2025-10-05 04:41:24,573][root][INFO] - Y_full NaNs after imputation: 0
+[2025-10-05 04:41:24,573][root][INFO] - X_full feature count: 1671
+[2025-10-05 04:41:24,580][root][INFO] - Data loaded: X_full_np shape=(1917, 1671), Y_full_np shape=(1917, 424)
+[2025-10-05 04:41:24,581][root][INFO] - Raw data shapes: X=(1917, 1671), Y=(1917, 424)
+[2025-10-05 04:41:24,581][root][INFO] - Sample batch shapes: X=(64, 1671), Y=(64, 424)
+[2025-10-05 04:41:24,971][root][INFO] - Trial 12 started with params: {'input_size': 1671, 'output_size': 424, 'output_len': 5, 'input_len': 128, 'label_len': 32, 'hidden_size': 512, 'num_layers': 4, 'd_layers': 3, 'nhead': 4, 'dim_feedforward': 1280, 'dropout': 0.2, 'batch_size': 16, 'attn': 'prob', 'distil': True, 'mix': True}, lr=0.0001363913527708779, optimizer=Adam, lr_policy=clr
+[2025-10-05 04:41:25,236][root][INFO] - Performed memory cleaning.
+[2025-10-05 04:41:25,355][root][INFO] - Trial 13 started with params: {'input_size': 1671, 'output_size': 424, 'output_len': 5, 'input_len': 48, 'label_len': 48, 'hidden_size': 128, 'num_layers': 3, 'd_layers': 3, 'nhead': 4, 'dim_feedforward': 1792, 'dropout': 0.05, 'batch_size': 16, 'attn': 'prob', 'distil': True, 'mix': True}, lr=1.288225031499926e-05, optimizer=Adam, lr_policy=onecycle
+[2025-10-05 04:41:25,615][root][INFO] - GPU Memory: 1.06 GB used out of 8.00 GB
+[2025-10-05 04:41:25,615][root][INFO] - Performed memory cleaning.
+[2025-10-05 04:41:25,615][root][INFO] - GPU Memory: 1.06 GB used out of 8.00 GB
+[2025-10-05 04:41:25,619][root][INFO] - Trial 13: X_raw shape=(1917, 1671), Y_raw shape=(1917, 424), NaNs X=0, Y=0
+[2025-10-05 04:41:25,619][root][INFO] - Trial 12: X_raw shape=(1917, 1671), Y_raw shape=(1917, 424), NaNs X=0, Y=0
+[2025-10-05 04:41:25,619][root][INFO] - Building Informer datasets with input_len=48, output_len=5, label_len=48, use_time_feats=True
+[2025-10-05 04:41:25,619][root][INFO] - Building Informer datasets with input_len=128, output_len=5, label_len=32, use_time_feats=True
+[2025-10-05 04:41:25,926][root][INFO] - WindowDataset created: Xw shape=(1865, 48, 1671), Yw shape=(1865, 5, 424), invalid_windows: 0
+[2025-10-05 04:41:26,890][root][INFO] - WindowDataset created: Xw shape=(1785, 128, 1671), Yw shape=(1785, 5, 424), invalid_windows: 0
+[2025-10-05 04:41:29,257][root][INFO] - InformerWindowDataset created: Xw shape=(1865, 48, 1671), x_dec shape=(1865, 53, 424), Yw shape=(1865, 5, 424), mark_enc shape=(1865, 48, 128), invalid_windows=0
+[2025-10-05 04:41:29,262][root][INFO] - Informer dataset created: X_enc shape=(1865, 48, 1671), x_dec shape=(1865, 53, 424), Y shape=(1865, 5, 424), mark_enc shape=(1865, 48, 128)
+[2025-10-05 04:41:29,458][root][INFO] - Informer DataLoaders created: train=1400, val=279, test=186
+[2025-10-05 04:41:29,460][root][INFO] - Trial 13: Creating InTrainer with device=cuda
+[2025-10-05 04:41:29,460][root][INFO] - InTrainer initialized with model_kwargs: {'input_size': 1671, 'enc_in': 1671, 'dec_in': 424, 'c_out': 424, 'seq_len': 48, 'label_len': 48, 'out_len': 5, 'd_model': 128, 'n_heads': 4, 'e_layers': 3, 'd_layers': 3, 'd_ff': 1792, 'dropout': 0.05, 'attn': 'prob', 'embed': 'fixed', 'freq': 'd', 'activation': 'gelu', 'distil': True, 'mix': True, 'device': 'cuda'}
+[2025-10-05 04:41:29,691][root][INFO] - Trainer initialized with device=cpu
+[2025-10-05 04:41:29,757][root][ERROR] - Trial 13 failed: shape '[16, 48, -1]' is invalid for input of size 81920
+Traceback (most recent call last):
+  File "/root/vscode/portfolio/mitsui_2025/src/study.py", line 202, in objective_informer
+    val_loss = trainer.train(train_loader=train_loader, val_loader=val_loader)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/root/vscode/portfolio/mitsui_2025/src/trainer.py", line 673, in train
+    pred = self.model(x_enc, x_mark_enc=x_mark_enc, x_dec=x_dec, x_mark_dec=x_mark_dec)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/root/anaconda3/envs/mitsui/lib/python3.11/site-packages/torch/nn/modules/module.py", line 1736, in _wrapped_call_impl
+    return self._call_impl(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/root/anaconda3/envs/mitsui/lib/python3.11/site-packages/torch/nn/modules/module.py", line 1747, in _call_impl
+    return forward_call(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/root/vscode/portfolio/mitsui_2025/src/models.py", line 1589, in forward
+    enc_out, attns = self.encoder(enc_out, attn_mask=enc_self_mask)
+                     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/root/anaconda3/envs/mitsui/lib/python3.11/site-packages/torch/nn/modules/module.py", line 1736, in _wrapped_call_impl
+    return self._call_impl(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/root/anaconda3/envs/mitsui/lib/python3.11/site-packages/torch/nn/modules/module.py", line 1747, in _call_impl
+    return forward_call(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/root/vscode/portfolio/mitsui_2025/src/models.py", line 1407, in forward
+    x, attn = attn_layer(x, attn_mask=attn_mask)
+              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/root/anaconda3/envs/mitsui/lib/python3.11/site-packages/torch/nn/modules/module.py", line 1736, in _wrapped_call_impl
+    return self._call_impl(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/root/anaconda3/envs/mitsui/lib/python3.11/site-packages/torch/nn/modules/module.py", line 1747, in _call_impl
+    return forward_call(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/root/vscode/portfolio/mitsui_2025/src/models.py", line 1389, in forward
+    new_x, attn = self.attention(x, x, x, attn_mask=attn_mask)
+                  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/root/anaconda3/envs/mitsui/lib/python3.11/site-packages/torch/nn/modules/module.py", line 1736, in _wrapped_call_impl
+    return self._call_impl(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/root/anaconda3/envs/mitsui/lib/python3.11/site-packages/torch/nn/modules/module.py", line 1747, in _call_impl
+    return forward_call(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/root/vscode/portfolio/mitsui_2025/src/models.py", line 1373, in forward
+    out = out.reshape(B, L, -1)
+          ^^^^^^^^^^^^^^^^^^^^^
+RuntimeError: shape '[16, 48, -1]' is invalid for input of size 81920
+
+[2025-10-05 04:41:30,035][root][INFO] - GPU Memory: 1.06 GB used out of 8.00 GB
+[2025-10-05 04:41:30,302][root][INFO] - Performed memory cleaning.
+[2025-10-05 04:41:31,226][root][INFO] - InformerWindowDataset created: Xw shape=(1785, 128, 1671), x_dec shape=(1785, 37, 424), Yw shape=(1785, 5, 424), mark_enc shape=(1785, 128, 512), invalid_windows=0
+[2025-10-05 04:41:31,240][root][INFO] - Informer dataset created: X_enc shape=(1785, 128, 1671), x_dec shape=(1785, 37, 424), Y shape=(1785, 5, 424), mark_enc shape=(1785, 128, 512)
+[2025-10-05 04:41:31,727][root][INFO] - Informer DataLoaders created: train=1340, val=267, test=178
+[2025-10-05 04:41:31,728][root][INFO] - Trial 12: Creating InTrainer with device=cuda
+[2025-10-05 04:41:31,728][root][INFO] - InTrainer initialized with model_kwargs: {'input_size': 1671, 'enc_in': 1671, 'dec_in': 424, 'c_out': 424, 'seq_len': 128, 'label_len': 32, 'out_len': 5, 'd_model': 512, 'n_heads': 4, 'e_layers': 4, 'd_layers': 3, 'd_ff': 1280, 'dropout': 0.2, 'attn': 'prob', 'embed': 'fixed', 'freq': 'd', 'activation': 'gelu', 'distil': True, 'mix': True, 'device': 'cuda'}
+[2025-10-05 04:41:31,997][root][INFO] - Trainer initialized with device=cpu
+[2025-10-05 04:41:32,138][root][ERROR] - Trial 12 failed: mat1 and mat2 shapes cannot be multiplied (2048x200 and 512x512)
+Traceback (most recent call last):
+  File "/root/vscode/portfolio/mitsui_2025/src/study.py", line 202, in objective_informer
+    val_loss = trainer.train(train_loader=train_loader, val_loader=val_loader)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/root/vscode/portfolio/mitsui_2025/src/trainer.py", line 673, in train
+    pred = self.model(x_enc, x_mark_enc=x_mark_enc, x_dec=x_dec, x_mark_dec=x_mark_dec)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/root/anaconda3/envs/mitsui/lib/python3.11/site-packages/torch/nn/modules/module.py", line 1736, in _wrapped_call_impl
+    return self._call_impl(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/root/anaconda3/envs/mitsui/lib/python3.11/site-packages/torch/nn/modules/module.py", line 1747, in _call_impl
+    return forward_call(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/root/vscode/portfolio/mitsui_2025/src/models.py", line 1589, in forward
+    enc_out, attns = self.encoder(enc_out, attn_mask=enc_self_mask)
+                     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/root/anaconda3/envs/mitsui/lib/python3.11/site-packages/torch/nn/modules/module.py", line 1736, in _wrapped_call_impl
+    return self._call_impl(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/root/anaconda3/envs/mitsui/lib/python3.11/site-packages/torch/nn/modules/module.py", line 1747, in _call_impl
+    return forward_call(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/root/vscode/portfolio/mitsui_2025/src/models.py", line 1407, in forward
+    x, attn = attn_layer(x, attn_mask=attn_mask)
+              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/root/anaconda3/envs/mitsui/lib/python3.11/site-packages/torch/nn/modules/module.py", line 1736, in _wrapped_call_impl
+    return self._call_impl(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/root/anaconda3/envs/mitsui/lib/python3.11/site-packages/torch/nn/modules/module.py", line 1747, in _call_impl
+    return forward_call(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/root/vscode/portfolio/mitsui_2025/src/models.py", line 1389, in forward
+    new_x, attn = self.attention(x, x, x, attn_mask=attn_mask)
+                  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/root/anaconda3/envs/mitsui/lib/python3.11/site-packages/torch/nn/modules/module.py", line 1736, in _wrapped_call_impl
+    return self._call_impl(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/root/anaconda3/envs/mitsui/lib/python3.11/site-packages/torch/nn/modules/module.py", line 1747, in _call_impl
+    return forward_call(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/root/vscode/portfolio/mitsui_2025/src/models.py", line 1374, in forward
+    return self.out_projection(out), attn
+           ^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/root/anaconda3/envs/mitsui/lib/python3.11/site-packages/torch/nn/modules/module.py", line 1736, in _wrapped_call_impl
+    return self._call_impl(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/root/anaconda3/envs/mitsui/lib/python3.11/site-packages/torch/nn/modules/module.py", line 1747, in _call_impl
+    return forward_call(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/root/anaconda3/envs/mitsui/lib/python3.11/site-packages/torch/nn/modules/linear.py", line 125, in forward
+    return F.linear(input, self.weight, self.bias)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+RuntimeError: mat1 and mat2 shapes cannot be multiplied (2048x200 and 512x512)
+
+[2025-10-05 04:41:32,527][root][INFO] - GPU Memory: 1.06 GB used out of 8.00 GB
+[2025-10-05 04:41:32,796][root][INFO] - Performed memory cleaning.
+[2025-10-05 04:41:32,828][root][WARNING] - No completed trials for INF. All trials were pruned or failed. Trials: 14
+[2025-10-05 04:41:32,830][root][INFO] - Trial states: [3, 3, 3, 3, 2, 2, 3, 3, 2, 2, 2, 2, 2, 2]

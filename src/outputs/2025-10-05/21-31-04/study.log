@@ -1,0 +1,99 @@
+[2025-10-05 21:31:04,500][root][INFO] - Configuration: experiment:
+  data_path: ../data
+  checkpoint_dir: ../checkpoints
+  models:
+  - derits
+  row_fraction: 1.0
+  num_targets: 424
+  filter_features: false
+  optuna:
+    direction: minimize
+    n_trials: 2
+    n_jobs: 2
+model:
+  model_type: default
+  model_class: default
+  trainer_class: default
+  params:
+    input_size: 1672
+    output_size: 424
+    input_len: 64
+    output_len: 5
+    batch_size: 16
+    hidden_size: 128
+    num_layers: 2
+    dropout: 0.1
+    epochs: 10
+    patience: 5
+    channels: 64
+    blocks: 3
+    kernel_size: 5
+    num_conv_layers: 2
+    tcn_kernel: 3
+    decom_kernel_size: 25
+    top_k_modes: 5
+    nhead: 8
+    dim_feedforward: 512
+    weight_decay: 0.001
+    scheduler_patience: 5
+    scheduler_factor: 0.5
+    clip_grad_norm: 1.0
+    partially_finite_target: false
+  lr: 0.001
+  optimizer: AdamW
+  lr_policy: constant
+
+[2025-10-05 21:31:04,503][root][INFO] - Set random seed to 42 for reproducibility.
+[2025-10-05 21:31:04,503][root][INFO] - CUDA version: 12.1
+[2025-10-05 21:31:04,547][root][INFO] - Device count: 1
+[2025-10-05 21:31:04,550][root][INFO] - Device name: NVIDIA GeForce RTX 4060 Laptop GPU
+[2025-10-05 21:31:04,653][root][INFO] - Loading train.csv from ../data/train.csv
+[2025-10-05 21:31:04,735][root][INFO] - Loading train_labels.csv from ../data/train_labels.csv
+[2025-10-05 21:31:04,855][root][INFO] - Loading target_pairs.csv from ../data/target_pairs.csv
+[2025-10-05 21:31:05,008][root][INFO] - X_full NaNs after imputation: 0
+[2025-10-05 21:31:05,009][root][INFO] - Y_full NaNs before imputation: 0
+[2025-10-05 21:31:05,011][root][INFO] - Y_full NaNs after imputation: 0
+[2025-10-05 21:31:05,011][root][INFO] - X_full feature count: 1671
+[2025-10-05 21:31:05,020][root][INFO] - Data loaded: X_full_np shape=(1917, 1671), Y_full_np shape=(1917, 424)
+[2025-10-05 21:31:05,020][root][INFO] - Raw data shapes: X=(1917, 1671), Y=(1917, 424)
+[2025-10-05 21:31:05,020][root][INFO] - Sample batch shapes: X=(64, 1671), Y=(64, 424)
+[2025-10-05 21:31:09,086][root][INFO] - WindowDataset created: Xw shape=(1529, 384, 1671), Yw shape=(1529, 5, 424), invalid_windows: 0
+[2025-10-05 21:31:09,404][root][INFO] - WindowDataset created: Xw shape=(1465, 448, 1671), Yw shape=(1465, 5, 424), invalid_windows: 0
+[2025-10-05 21:31:21,115][root][WARNING] - Non-finite loss encountered; skipping batch.
+[2025-10-05 21:31:21,116][root][WARNING] - Non-finite loss encountered; skipping batch.
+[2025-10-05 21:31:43,201][root][WARNING] - Non-finite loss encountered; skipping batch.
+[2025-10-05 21:31:43,202][root][WARNING] - Non-finite loss encountered; skipping batch.
+[2025-10-05 21:31:51,904][root][WARNING] - Non-finite loss encountered; skipping batch.
+[2025-10-05 21:31:51,904][root][WARNING] - Non-finite loss encountered; skipping batch.
+[2025-10-05 21:32:13,788][root][WARNING] - Non-finite loss encountered; skipping batch.
+[2025-10-05 21:32:13,789][root][WARNING] - Non-finite loss encountered; skipping batch.
+[2025-10-05 21:32:22,471][root][WARNING] - Non-finite loss encountered; skipping batch.
+[2025-10-05 21:32:22,471][root][WARNING] - Non-finite loss encountered; skipping batch.
+[2025-10-05 21:32:43,991][root][WARNING] - Non-finite loss encountered; skipping batch.
+[2025-10-05 21:32:43,992][root][WARNING] - Non-finite loss encountered; skipping batch.
+[2025-10-05 21:32:52,610][root][WARNING] - Non-finite loss encountered; skipping batch.
+[2025-10-05 21:32:52,677][root][WARNING] - Non-finite loss encountered; skipping batch.
+[2025-10-05 21:33:16,701][root][WARNING] - Non-finite loss encountered; skipping batch.
+[2025-10-05 21:33:16,702][root][WARNING] - Non-finite loss encountered; skipping batch.
+[2025-10-05 21:33:27,301][root][WARNING] - Non-finite loss encountered; skipping batch.
+[2025-10-05 21:33:27,301][root][WARNING] - Non-finite loss encountered; skipping batch.
+[2025-10-05 21:33:49,123][root][WARNING] - Non-finite loss encountered; skipping batch.
+[2025-10-05 21:33:49,124][root][WARNING] - Non-finite loss encountered; skipping batch.
+[2025-10-05 21:33:59,257][root][WARNING] - Non-finite loss encountered; skipping batch.
+[2025-10-05 21:33:59,257][root][WARNING] - Non-finite loss encountered; skipping batch.
+[2025-10-05 21:34:20,499][root][WARNING] - Non-finite loss encountered; skipping batch.
+[2025-10-05 21:34:20,500][root][WARNING] - Non-finite loss encountered; skipping batch.
+[2025-10-05 21:34:31,282][root][WARNING] - Non-finite loss encountered; skipping batch.
+[2025-10-05 21:34:31,283][root][WARNING] - Non-finite loss encountered; skipping batch.
+[2025-10-05 21:34:53,832][root][WARNING] - Non-finite loss encountered; skipping batch.
+[2025-10-05 21:34:53,833][root][WARNING] - Non-finite loss encountered; skipping batch.
+[2025-10-05 21:35:05,488][root][WARNING] - Non-finite loss encountered; skipping batch.
+[2025-10-05 21:35:05,489][root][WARNING] - Non-finite loss encountered; skipping batch.
+[2025-10-05 21:35:28,549][root][WARNING] - Non-finite loss encountered; skipping batch.
+[2025-10-05 21:35:28,549][root][WARNING] - Non-finite loss encountered; skipping batch.
+[2025-10-05 21:35:40,906][root][WARNING] - Non-finite loss encountered; skipping batch.
+[2025-10-05 21:35:40,907][root][WARNING] - Non-finite loss encountered; skipping batch.
+[2025-10-05 21:36:04,250][root][WARNING] - Non-finite loss encountered; skipping batch.
+[2025-10-05 21:36:04,377][root][WARNING] - Non-finite loss encountered; skipping batch.
+[2025-10-05 21:36:16,112][root][WARNING] - Non-finite loss encountered; skipping batch.
+[2025-10-05 21:36:16,210][root][WARNING] - Non-finite loss encountered; skipping batch.

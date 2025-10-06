@@ -1,0 +1,95 @@
+[2025-10-05 07:58:12,706][root][INFO] - Configuration: experiment:
+  data_path: ../data
+  checkpoint_dir: ../checkpoints
+  models:
+  - 'inf'
+  row_fraction: 1.0
+  num_targets: 424
+  filter_features: false
+  optuna:
+    direction: minimize
+    n_trials: 2
+    n_jobs: 2
+model:
+  model_type: default
+  model_class: default
+  trainer_class: default
+  params:
+    input_size: 1672
+    output_size: 424
+    input_len: 64
+    output_len: 5
+    batch_size: 16
+    hidden_size: 128
+    num_layers: 2
+    dropout: 0.1
+    epochs: 10
+    patience: 5
+    channels: 64
+    blocks: 3
+    kernel_size: 5
+    num_conv_layers: 2
+    tcn_kernel: 3
+    decom_kernel_size: 25
+    top_k_modes: 5
+    nhead: 8
+    dim_feedforward: 512
+    weight_decay: 0.001
+    scheduler_patience: 5
+    scheduler_factor: 0.5
+    clip_grad_norm: 1.0
+    partially_finite_target: false
+  lr: 0.001
+  optimizer: AdamW
+  lr_policy: constant
+
+[2025-10-05 07:58:12,708][root][INFO] - Set random seed to 42 for reproducibility.
+[2025-10-05 07:58:12,708][root][INFO] - CUDA version: 12.1
+[2025-10-05 07:58:12,748][root][INFO] - Device count: 1
+[2025-10-05 07:58:12,750][root][INFO] - Device name: NVIDIA GeForce RTX 4060 Laptop GPU
+[2025-10-05 07:58:12,855][root][INFO] - Loading train.csv from ../data/train.csv
+[2025-10-05 07:58:12,931][root][INFO] - Loading train_labels.csv from ../data/train_labels.csv
+[2025-10-05 07:58:13,030][root][INFO] - Loading target_pairs.csv from ../data/target_pairs.csv
+[2025-10-05 07:58:13,178][root][INFO] - X_full NaNs after imputation: 0
+[2025-10-05 07:58:13,178][root][INFO] - Y_full NaNs before imputation: 0
+[2025-10-05 07:58:13,179][root][INFO] - Y_full NaNs after imputation: 0
+[2025-10-05 07:58:13,179][root][INFO] - X_full feature count: 1671
+[2025-10-05 07:58:13,186][root][INFO] - Data loaded: X_full_np shape=(1917, 1671), Y_full_np shape=(1917, 424)
+[2025-10-05 07:58:13,186][root][INFO] - Raw data shapes: X=(1917, 1671), Y=(1917, 424)
+[2025-10-05 07:58:13,186][root][INFO] - Sample batch shapes: X=(64, 1671), Y=(64, 424)
+[2025-10-05 07:58:13,581][root][INFO] - Trial 6 started with params: {'input_size': 1671, 'output_size': 424, 'output_len': 5, 'input_len': 128, 'label_len': 64, 'hidden_size': 512, 'num_layers': 4, 'd_layers': 2, 'nhead': 4, 'dim_feedforward': 1280, 'dropout': 0.2, 'batch_size': 16, 'attn': 'prob', 'distil': True}, lr=2.4258829607829977e-05, optimizer=AdamW, lr_policy=onecycle
+[2025-10-05 07:58:13,839][root][INFO] - Performed memory cleaning.
+[2025-10-05 07:58:13,939][root][INFO] - Trial 7 started with params: {'input_size': 1671, 'output_size': 424, 'output_len': 5, 'input_len': 96, 'label_len': 16, 'hidden_size': 512, 'num_layers': 3, 'd_layers': 1, 'nhead': 4, 'dim_feedforward': 2048, 'dropout': 0.25, 'batch_size': 16, 'attn': 'prob', 'distil': True}, lr=0.0004710592173102244, optimizer=Adam, lr_policy=clr
+[2025-10-05 07:58:14,192][root][INFO] - GPU Memory: 1.06 GB used out of 8.00 GB
+[2025-10-05 07:58:14,192][root][INFO] - Performed memory cleaning.
+[2025-10-05 07:58:14,193][root][INFO] - GPU Memory: 1.06 GB used out of 8.00 GB
+[2025-10-05 07:58:14,196][root][INFO] - Trial 6: X_raw shape=(1917, 1671), Y_raw shape=(1917, 424), NaNs X=0, Y=0
+[2025-10-05 07:58:14,196][root][INFO] - InTrainer initialized with model_kwargs: {'input_size': 1671, 'output_size': 424, 'output_len': 5, 'input_len': 128, 'hidden_size': 512, 'num_layers': 4, 'd_layers': 2, 'nhead': 4, 'dim_feedforward': 512, 'dropout': 0.2, 'batch_size': 16, 'attn': 'prob', 'distil': True}
+[2025-10-05 07:58:14,197][root][INFO] - Trial 7: X_raw shape=(1917, 1671), Y_raw shape=(1917, 424), NaNs X=0, Y=0
+[2025-10-05 07:58:14,197][root][ERROR] - Trial 6 failed: InForecaster.__init__() got an unexpected keyword argument 'output_size'
+Traceback (most recent call last):
+  File "/root/vscode/portfolio/mitsui_2025/src/study.py", line 203, in objective_informer
+    trainer = InTrainer(train_cfg, criterion=nn.MSELoss())
+              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/root/vscode/portfolio/mitsui_2025/src/trainer.py", line 646, in __init__
+    model = InForecaster(**model_params)
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+TypeError: InForecaster.__init__() got an unexpected keyword argument 'output_size'
+
+[2025-10-05 07:58:14,198][root][INFO] - InTrainer initialized with model_kwargs: {'input_size': 1671, 'output_size': 424, 'output_len': 5, 'input_len': 96, 'hidden_size': 512, 'num_layers': 3, 'd_layers': 1, 'nhead': 4, 'dim_feedforward': 512, 'dropout': 0.25, 'batch_size': 16, 'attn': 'prob', 'distil': True}
+[2025-10-05 07:58:14,198][root][ERROR] - Trial 7 failed: InForecaster.__init__() got an unexpected keyword argument 'output_size'
+Traceback (most recent call last):
+  File "/root/vscode/portfolio/mitsui_2025/src/study.py", line 203, in objective_informer
+    trainer = InTrainer(train_cfg, criterion=nn.MSELoss())
+              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/root/vscode/portfolio/mitsui_2025/src/trainer.py", line 646, in __init__
+    model = InForecaster(**model_params)
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+TypeError: InForecaster.__init__() got an unexpected keyword argument 'output_size'
+
+[2025-10-05 07:58:14,728][root][INFO] - GPU Memory: 1.06 GB used out of 8.00 GB
+[2025-10-05 07:58:14,981][root][INFO] - GPU Memory: 1.06 GB used out of 8.00 GB
+[2025-10-05 07:58:14,981][root][INFO] - Performed memory cleaning.
+[2025-10-05 07:58:15,260][root][INFO] - Performed memory cleaning.
+[2025-10-05 07:58:15,300][root][WARNING] - No completed trials for INF. All trials were pruned or failed. Trials: 8
+[2025-10-05 07:58:15,301][root][INFO] - Trial states: [2, 2, 2, 2, 2, 2, 2, 2]
